@@ -1,0 +1,51 @@
+{
+  "name": "gtp-sts-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "setup-db": "node src/scripts/initPermissions.js",
+    "swagger": "node swagger.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.2",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-slow-down": "^3.0.1",
+    "firebase-admin": "^10.3.0",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
+    "mysql2": "^3.16.0",
+    "nodemailer": "^8.0.1",
+    "puppeteer": "^24.37.5",
+    "qrcode": "^1.5.4",
+    "redis": "^5.11.0",
+    "sequelize": "^6.37.7",
+    "slugify": "^1.6.9",
+    "socket.io": "^4.8.3",
+    "socket.io-redis": "^5.2.0",
+    "speakeasy": "^2.0.0",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "axios": "^1.13.6",
+    "nodemon": "^3.1.11",
+    "socket.io-client": "^4.8.3",
+    "swagger-autogen": "^2.23.7"
+  }
+}

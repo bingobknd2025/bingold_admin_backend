@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-error.log*
+
+# Build & Coverage
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+
+# Runtime files
+pids/
+*.pid
+
+# Uploads
+uploads/
+storage/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+test.js
+src/config/firebase-service-account.json
+node_modules/
+.env
+src/config/firebase-service-account.json
