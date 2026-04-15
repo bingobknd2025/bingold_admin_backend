@@ -14,19 +14,25 @@ router.post("/dashboard", async (req, res, next) => {
         const {
             PdaUser,
             Role,
-            Permission
+            Permission,
+            News,
+            Blog
         } = require('../../models');
 
         const [
             totalUsers,
             totalRoles,
             totalPermissions,
-            activeUsers
+            activeUsers,
+            totalBlogs,
+            totalNews
         ] = await Promise.all([
             PdaUser.count(),
             Role.count(),
             Permission.count(),
-            PdaUser.count({ where: { is_active: true } })
+            PdaUser.count({ where: { is_active: true } }),
+            News.count(),
+            Blog.count()
         ]);
 
         res.json({
@@ -40,6 +46,10 @@ router.post("/dashboard", async (req, res, next) => {
                     totalPermissions,
                     activeUsers,
                     inactiveUsers: totalUsers - activeUsers
+                },
+                contentManagement: {
+                    totalBlogs,
+                    totalNews
                 }
             }
         });
