@@ -50,6 +50,8 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+app.use(apiKeyMiddleware);
+
 app.use("/api/bingold/auth", require("./routes/auth.routes"));
 
 app.use("/api/bingold", jwtAuthMiddleware);
