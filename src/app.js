@@ -54,6 +54,9 @@ app.use(apiKeyMiddleware);
 
 app.use("/api/bingold/auth", require("./routes/auth.routes"));
 
+// Public routes (no auth required)
+app.use("/api/bingold", require("./routes/public/public.routes"));
+
 app.use("/api/bingold", jwtAuthMiddleware);
 
 app.use("/api/bingold/admin", require("./routes/admin/admin.routes"));

@@ -1,0 +1,20 @@
+// routes/public/public.routes.js
+const express = require('express');
+const router = express.Router();
+
+const publicBlogController = require('../../controllers/public/blog.public.controller');
+const publicNewsController = require('../../controllers/public/news.public.controller');
+
+// ─── Blog Public Routes ───────────────────────────────────────
+// GET /api/bingold/blogs          → List all active blogs (paginated)
+// GET /api/bingold/blogs/:slug    → Get single blog by slug
+router.post('/blogs', publicBlogController.listBlogs);
+router.post('/blogs/:slug', publicBlogController.getBlogBySlug);
+
+// ─── News Public Routes ───────────────────────────────────────
+// GET /api/bingold/news           → List all active news (paginated)
+// GET /api/bingold/news/:slug     → Get single news by slug
+router.post('/news', publicNewsController.listNews);
+router.post('/news/:slug', publicNewsController.getNewsBySlug);
+
+module.exports = router;
