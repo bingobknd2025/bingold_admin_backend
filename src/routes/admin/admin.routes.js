@@ -31,8 +31,8 @@ router.post("/dashboard", async (req, res, next) => {
             Role.count(),
             Permission.count(),
             PdaUser.count({ where: { is_active: true } }),
-            News.count(),
-            Blog.count()
+            Blog.count(),
+            News.count()
         ]);
 
         res.json({
