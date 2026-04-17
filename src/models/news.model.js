@@ -33,8 +33,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM('active', 'inactive'),
-            defaultValue: 'active',
+            type: DataTypes.STRING(50),
             allowNull: false
         },
         dstatus: {
@@ -59,6 +58,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         cover_image: {
+            type: DataTypes.STRING(255),
+            allowNull: true
+        },
+        image: {
             type: DataTypes.STRING(255),
             allowNull: true
         },

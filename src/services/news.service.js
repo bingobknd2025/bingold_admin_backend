@@ -38,6 +38,7 @@ class NewsService {
             meta_description: data.meta_description || null,
             meta_keyword: data.meta_keyword || null,
             cover_image: data.cover_image || null,
+            image: data.image || null,
             published_at: data.published_at || null,
             dstatus: data.dstatus !== undefined ? data.dstatus : '0',
             user_id: userId

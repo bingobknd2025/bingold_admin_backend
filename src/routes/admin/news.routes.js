@@ -5,7 +5,8 @@ const checkPermission = require("../../middleware/permission.middleware");
 const upload = require("../../middleware/upload.middleware");
 
 const uploadFields = upload.fields([
-    { name: 'cover_image', maxCount: 1 }
+    { name: 'cover_image', maxCount: 1 },
+    { name: 'image', maxCount: 1 }
 ]);
 
 router.post("/create", checkPermission('news.create'), uploadFields, newsController.createNews);

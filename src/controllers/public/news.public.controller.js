@@ -38,6 +38,7 @@ class PublicNewsController {
                     'created_at',
                     'updated_at',
                     'cover_image',
+                    'image',
                     'published_at'
                 ],
                 limit,
@@ -54,7 +55,7 @@ class PublicNewsController {
                     title: data.title,
                     slug: data.slug,
                     short_description: data.short_description,
-                    status: data.status === 'active' ? 'live' : data.status,
+                    status: data.status,
                     dstatus: data.dstatus,
                     category: data.category,
                     meta_title: data.meta_title,
@@ -64,6 +65,7 @@ class PublicNewsController {
                     created_at: data.created_at,
                     updated_at: data.updated_at,
                     cover_image: data.cover_image,
+                    image: data.image,
                     published_at: data.published_at
                 };
             });
@@ -114,6 +116,7 @@ class PublicNewsController {
                     'created_at',
                     'updated_at',
                     'cover_image',
+                    'image',
                     'published_at'
                 ]
             });
@@ -133,7 +136,7 @@ class PublicNewsController {
                     title: data.title,
                     slug: data.slug,
                     short_description: data.short_description,
-                    status: data.status === 'active' ? 'live' : data.status,
+                    status: data.status,
                     dstatus: data.dstatus,
                     category: data.category,
                     meta_title: data.meta_title,
@@ -143,6 +146,7 @@ class PublicNewsController {
                     created_at: data.created_at,
                     updated_at: data.updated_at,
                     cover_image: data.cover_image,
+                    image: data.image,
                     published_at: data.published_at
                 }
             });

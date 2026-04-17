@@ -21,6 +21,7 @@ class NewsController {
                 meta_description,
                 meta_keyword,
                 cover_image,
+                image,
                 published_at
             } = req.body;
 
@@ -29,6 +30,10 @@ class NewsController {
                 if (req.files.cover_image && req.files.cover_image[0]) {
                     const result = await cloudinaryHelper.uploadBuffer(req.files.cover_image[0].buffer, 'bingold/news/cover');
                     req.body.cover_image = result.secure_url;
+                }
+                if (req.files.image && req.files.image[0]) {
+                    const result = await cloudinaryHelper.uploadBuffer(req.files.image[0].buffer, 'bingold/news/images');
+                    req.body.image = result.secure_url;
                 }
             }
 
@@ -94,6 +99,10 @@ class NewsController {
                 if (req.files.cover_image && req.files.cover_image[0]) {
                     const result = await cloudinaryHelper.uploadBuffer(req.files.cover_image[0].buffer, 'bingold/news/cover');
                     req.body.cover_image = result.secure_url;
+                }
+                if (req.files.image && req.files.image[0]) {
+                    const result = await cloudinaryHelper.uploadBuffer(req.files.image[0].buffer, 'bingold/news/images');
+                    req.body.image = result.secure_url;
                 }
             }
             const news = await NewsService.updateNews(id, req.body);
