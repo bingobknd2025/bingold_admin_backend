@@ -50,6 +50,12 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Public QR-scan verification page (must be reachable from a browser
+// without the x-api-key header, so it is mounted BEFORE apiKeyMiddleware)
+const publicAgentController = require('./controllers/public/agent.public.controller');
+app.get('/verify/:code', publicAgentController.verifyAgentPage);
+app.get('/api/bingold/agents/verify/:code', publicAgentController.verifyAgentPage);
+
 app.use(apiKeyMiddleware);
 
 app.use("/api/bingold/auth", require("./routes/auth.routes"));

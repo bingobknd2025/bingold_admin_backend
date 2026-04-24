@@ -7,6 +7,8 @@ router.use("/roles", require("../admin/role.routes"));
 router.use("/users", require("../admin/user.routes"));
 router.use("/blogs", require("../admin/blog.routes"));
 router.use("/news", require("../admin/news.routes"));
+router.use("/youtube", require("../admin/youtube_video.routes"));
+router.use("/agents", require("../admin/agent.routes"));
 router.use("/common", require("../admin/common.routes"));
 
 router.post("/dashboard", async (req, res, next) => {
@@ -16,7 +18,8 @@ router.post("/dashboard", async (req, res, next) => {
             Role,
             Permission,
             News,
-            Blog
+            Blog,
+            YoutubeVideo
         } = require('../../models');
 
         const [
@@ -25,14 +28,16 @@ router.post("/dashboard", async (req, res, next) => {
             totalPermissions,
             activeUsers,
             totalBlogs,
-            totalNews
+            totalNews,
+            totalYoutubeVideos
         ] = await Promise.all([
             PdaUser.count(),
             Role.count(),
             Permission.count(),
             PdaUser.count({ where: { is_active: true } }),
             Blog.count(),
-            News.count()
+            News.count(),
+            YoutubeVideo.count()
         ]);
 
         res.json({
@@ -49,7 +54,8 @@ router.post("/dashboard", async (req, res, next) => {
                 },
                 contentManagement: {
                     totalBlogs,
-                    totalNews
+                    totalNews,
+                    totalYoutubeVideos
                 }
             }
         });

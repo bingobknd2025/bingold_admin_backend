@@ -47,6 +47,20 @@ const initPermissionSystem = async () => {
             { name: 'Create Blog', slug: 'blog.create', module: 'Blog' },
             { name: 'Update Blog', slug: 'blog.update', module: 'Blog' },
             { name: 'Delete Blog', slug: 'blog.delete', module: 'Blog' },
+
+            // Youtube Video Module
+            { name: 'View Youtube Videos', slug: 'youtube_video.list', module: 'YoutubeVideo' },
+            { name: 'View Single Youtube Video', slug: 'youtube_video.view', module: 'YoutubeVideo' },
+            { name: 'Create Youtube Video', slug: 'youtube_video.create', module: 'YoutubeVideo' },
+            { name: 'Update Youtube Video', slug: 'youtube_video.update', module: 'YoutubeVideo' },
+            { name: 'Delete Youtube Video', slug: 'youtube_video.delete', module: 'YoutubeVideo' },
+
+            // Agent Module
+            { name: 'View Agents', slug: 'agent.list', module: 'Agent' },
+            { name: 'View Single Agent', slug: 'agent.view', module: 'Agent' },
+            { name: 'Create Agent', slug: 'agent.create', module: 'Agent' },
+            { name: 'Update Agent', slug: 'agent.update', module: 'Agent' },
+            { name: 'Delete Agent', slug: 'agent.delete', module: 'Agent' },
         ];
 
         for (const permData of defaultPermissions) {

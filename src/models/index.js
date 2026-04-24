@@ -17,6 +17,9 @@ db.RolePermission = require("./role_permission.model")(sequelize, DataTypes);
 db.Otp = require("./otp.model")(sequelize, DataTypes);
 db.Blog = require("./blog.model")(sequelize, DataTypes);
 db.News = require("./news.model")(sequelize, DataTypes);
+db.YoutubeVideo = require("./youtube_video.model")(sequelize, DataTypes);
+db.Agent = require("./agent.model")(sequelize, DataTypes);
+db.AgentScanLog = require("./agent_scan_log.model")(sequelize, DataTypes);
 
 // Define associations
 
@@ -94,5 +97,16 @@ db.PdaUser.hasMany(db.Blog, { foreignKey: 'user_id', as: 'blogs' });
 
 db.News.belongsTo(db.PdaUser, { foreignKey: 'user_id', as: 'author' });
 db.PdaUser.hasMany(db.News, { foreignKey: 'user_id', as: 'news' });
+
+// 6. Youtube Video mappings
+db.YoutubeVideo.belongsTo(db.PdaUser, { foreignKey: 'created_by', as: 'creator' });
+db.YoutubeVideo.belongsTo(db.PdaUser, { foreignKey: 'updated_by', as: 'updater' });
+db.PdaUser.hasMany(db.YoutubeVideo, { foreignKey: 'created_by', as: 'youtube_videos' });
+
+// 7. Agent + scan logs
+db.Agent.belongsTo(db.PdaUser, { foreignKey: 'created_by', as: 'creator' });
+db.Agent.belongsTo(db.PdaUser, { foreignKey: 'updated_by', as: 'updater' });
+db.Agent.hasMany(db.AgentScanLog, { foreignKey: 'agent_id', as: 'scan_logs', onDelete: 'CASCADE' });
+db.AgentScanLog.belongsTo(db.Agent, { foreignKey: 'agent_id', as: 'agent' });
 
 module.exports = db;
