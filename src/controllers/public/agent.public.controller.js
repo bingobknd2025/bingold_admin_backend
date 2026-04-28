@@ -106,8 +106,25 @@ class PublicAgentController {
         }
     }
 
-    // GET handler — what a phone hits when scanning the QR. Returns an HTML
-    // verification card so anyone can scan and see results without a frontend.
+    // GET handler — what a phone hits when scanning a QR that points at the
+    // API host. Redirects to the frontend app so the user always lands inside
+    // our web UI (which then calls the POST verify API).
+    async verifyAgentRedirect(req, res, next) {
+        try {
+            const code = req.params.code || req.query.code || '';
+            const base = (
+                process.env.PUBLIC_VERIFY_BASE_URL ||
+                process.env.PUBLIC_APP_URL ||
+                'https://www.bingold.to'
+            ).replace(/\/$/, '');
+            const target = code ? `${base}/verify/${encodeURIComponent(code)}` : `${base}/verify`;
+            return res.redirect(302, target);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Legacy HTML verification card (kept for fallback/diagnostics).
     async verifyAgentPage(req, res, next) {
         try {
             const code = req.params.code || req.query.code;

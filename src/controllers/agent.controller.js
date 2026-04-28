@@ -1,9 +1,7 @@
 // controllers/agent.controller.js
-// Photo handling: clients upload the image via the common upload API
-// (POST /api/bingold/admin/common/upload-file) and send the returned URL
-// as the `photo` field in the JSON body here.
 const AgentService = require('../services/agent.service');
 const ApiError = require('../utils/apiError.util');
+const cloudinaryHelper = require('../utils/cloudinaryHelper.util');
 
 const ALLOWED_STATUSES = ['active', 'inactive'];
 
@@ -18,6 +16,11 @@ class AgentController {
             if (!name) throw new ApiError(400, 'name is required');
             if (status && !ALLOWED_STATUSES.includes(status)) {
                 throw new ApiError(400, `status must be one of: ${ALLOWED_STATUSES.join(', ')}`);
+            }
+
+            if (req.files && req.files.photo && req.files.photo[0]) {
+                const result = await cloudinaryHelper.uploadBuffer(req.files.photo[0].buffer, 'bingold/agents/photo');
+                req.body.photo = result.secure_url;
             }
 
             const agent = await AgentService.createAgent(req.body, req.user.pda_user_id);
@@ -75,6 +78,11 @@ class AgentController {
             if (!id) throw new ApiError(400, 'Agent id is required');
             if (status && !ALLOWED_STATUSES.includes(status)) {
                 throw new ApiError(400, `status must be one of: ${ALLOWED_STATUSES.join(', ')}`);
+            }
+
+            if (req.files && req.files.photo && req.files.photo[0]) {
+                const result = await cloudinaryHelper.uploadBuffer(req.files.photo[0].buffer, 'bingold/agents/photo');
+                req.body.photo = result.secure_url;
             }
 
             const agent = await AgentService.updateAgent(id, req.body, req.user.pda_user_id);

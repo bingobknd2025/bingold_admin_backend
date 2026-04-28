@@ -50,11 +50,14 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Public QR-scan verification page (must be reachable from a browser
-// without the x-api-key header, so it is mounted BEFORE apiKeyMiddleware)
+// Public QR-scan verification entry points. Browsers hitting the QR URL
+// must work without x-api-key, so these are mounted BEFORE apiKeyMiddleware.
+// Both routes 302-redirect to the frontend app (PUBLIC_VERIFY_BASE_URL),
+// which then calls POST /api/bingold/agents/verify/:code to render results.
 const publicAgentController = require('./controllers/public/agent.public.controller');
-app.get('/verify/:code', publicAgentController.verifyAgentPage);
-app.get('/api/bingold/agents/verify/:code', publicAgentController.verifyAgentPage);
+app.get('/verify/:code', publicAgentController.verifyAgentRedirect);
+app.get('/verify', publicAgentController.verifyAgentRedirect);
+app.get('/api/bingold/agents/verify/:code', publicAgentController.verifyAgentRedirect);
 
 app.use(apiKeyMiddleware);
 

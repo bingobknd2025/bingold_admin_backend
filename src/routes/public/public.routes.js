@@ -26,8 +26,6 @@ router.post('/youtube-videos', publicYoutubeVideoController.listVideos);
 router.post('/youtube-videos/:id', publicYoutubeVideoController.getVideoById);
 
 // ─── Agent Verification (public) ─────────────────────────────
-// POST /api/bingold/agents/verify/:code  → verify agent by unique code (QR target)
-// POST /api/bingold/agents/verify        → verify with code in body
 router.post('/agents/verify/:code', publicAgentController.verifyAgent);
 router.post('/agents/verify', publicAgentController.verifyAgent);
 

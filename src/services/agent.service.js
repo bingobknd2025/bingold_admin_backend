@@ -29,16 +29,15 @@ async function generateUniqueCode() {
 }
 
 function buildVerifyUrl(code) {
-    // Prefer a frontend URL (PUBLIC_VERIFY_BASE_URL) if you have a UI page,
-    // otherwise fall back to the API host so the QR still resolves to the
-    // built-in HTML verification card at /verify/:code.
-    const base =
+    // QR codes always point at the frontend app's /verify/:code route, so a
+    // scan from anywhere lands inside our UI. Override the base via
+    // PUBLIC_VERIFY_BASE_URL / PUBLIC_APP_URL for non-prod environments.
+    const base = (
         process.env.PUBLIC_VERIFY_BASE_URL ||
         process.env.PUBLIC_APP_URL ||
-        process.env.API_BASE_URL ||
-        '';
-    if (!base) return code;
-    return `${base.replace(/\/$/, '')}/verify/${code}`;
+        'https://www.bingold.to'
+    ).replace(/\/$/, '');
+    return `${base}/verify/${code}`;
 }
 
 async function uploadQrForCode(code) {
