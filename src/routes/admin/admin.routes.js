@@ -19,7 +19,8 @@ router.post("/dashboard", async (req, res, next) => {
             Permission,
             News,
             Blog,
-            YoutubeVideo
+            YoutubeVideo,
+            Agent
         } = require('../../models');
 
         const [
@@ -29,7 +30,8 @@ router.post("/dashboard", async (req, res, next) => {
             activeUsers,
             totalBlogs,
             totalNews,
-            totalYoutubeVideos
+            totalYoutubeVideos,
+            totalAgents
         ] = await Promise.all([
             PdaUser.count(),
             Role.count(),
@@ -37,7 +39,8 @@ router.post("/dashboard", async (req, res, next) => {
             PdaUser.count({ where: { is_active: true } }),
             Blog.count(),
             News.count(),
-            YoutubeVideo.count()
+            YoutubeVideo.count(),
+            Agent.count()
         ]);
 
         res.json({
@@ -55,7 +58,8 @@ router.post("/dashboard", async (req, res, next) => {
                 contentManagement: {
                     totalBlogs,
                     totalNews,
-                    totalYoutubeVideos
+                    totalYoutubeVideos,
+                    totalAgents
                 }
             }
         });
