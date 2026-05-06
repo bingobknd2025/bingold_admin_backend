@@ -59,6 +59,11 @@ app.get('/verify/:code', publicAgentController.verifyAgentRedirect);
 app.get('/verify', publicAgentController.verifyAgentRedirect);
 app.get('/api/bingold/agents/verify/:code', publicAgentController.verifyAgentRedirect);
 
+// Public sitemap.xml — crawler-facing, no auth, cached in-memory.
+const sitemapController = require('./controllers/public/sitemap.public.controller');
+app.get('/sitemap.xml', sitemapController.getSitemap);
+app.get('/api/bingold/sitemap.xml', sitemapController.getSitemap);
+
 app.use(apiKeyMiddleware);
 
 app.use("/api/bingold/auth", require("./routes/auth.routes"));
