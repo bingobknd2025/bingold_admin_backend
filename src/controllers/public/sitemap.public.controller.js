@@ -119,7 +119,7 @@ class SitemapController {
                     process.env.PUBLIC_SITE_URL ||
                     process.env.PUBLIC_APP_URL ||
                     process.env.PUBLIC_VERIFY_BASE_URL ||
-                    'https://www.bingold.to';
+                    'https://bingold.to';
                 cache = {
                     xml: await buildSitemapXml(base),
                     expiresAt: now + CACHE_TTL_MS
