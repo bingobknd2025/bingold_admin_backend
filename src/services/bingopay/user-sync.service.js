@@ -1,0 +1,91 @@
+// services/bingopay/user-sync.service.js
+//
+// Single source of truth for writing a BingoPay user into our database. Every
+// service that touches BinGold (auth, wallet, admin checks) calls upsertUser so
+// the bingopay_users mapping table always reflects the latest known data.
+// Matching is by bingold_user_id first, then email.
+const db = require('../../models');
+const { BingopayUser } = db;
+const BingoldApi = require('./bingold-api.service');
+
+// Pull identity fields out of a BinGold /users/profile response (shape is
+// undocumented, so we probe the common keys).
+function extractProfile(resp) {
+    const d = (resp && (resp.data ?? resp)) || {};
+    const u = d.user || d.profile || d;
+    return {
+        bingold_user_id: u.id ?? u.userId ?? u.user_id ?? u._id ?? null,
+        email: u.email || null,
+        phone: u.phone || u.phoneNumber || null,
+        first_name: u.firstName || u.first_name || null,
+        last_name: u.lastName || u.last_name || null,
+        kyc_status: u.kycStatus || u.kyc_status || null
+    };
+}
+
+async function upsertUser(data = {}) {
+    const { email, phone, first_name, last_name, bingold_user_id, account_type, status, kyc_status, markLogin } = data;
+
+    // Need at least one identifier to attach the record to.
+    if (!email && bingold_user_id == null) return null;
+
+    let user = null;
+    if (bingold_user_id != null) user = await BingopayUser.findOne({ where: { bingold_user_id } });
+    if (!user && email) user = await BingopayUser.findOne({ where: { email } });
+
+    const patch = {};
+    if (bingold_user_id != null) patch.bingold_user_id = bingold_user_id;
+    if (email) patch.email = email;
+    if (phone) patch.phone = phone;
+    if (first_name) patch.first_name = first_name;
+    if (last_name) patch.last_name = last_name;
+    if (account_type) patch.account_type = account_type;
+    if (status) patch.status = status;
+    if (kyc_status) patch.kyc_status = kyc_status;
+    if (markLogin) patch.last_login_at = new Date();
+
+    if (user) return user.update(patch);
+
+    return BingopayUser.create({
+        email: email || null,
+        phone: phone || null,
+        first_name: first_name || null,
+        last_name: last_name || null,
+        bingold_user_id: bingold_user_id != null ? bingold_user_id : null,
+        account_type: account_type || 'customer',
+        status: status || 'pending',
+        ...(kyc_status ? { kyc_status } : {}),
+        ...(markLogin ? { last_login_at: new Date() } : {})
+    });
+}
+
+// Resolve the caller's BinGold identity from their session token and upsert the
+// local bingopay_users row. Returns { user, info } where user is the local row.
+async function resolveFromToken(token, extra = {}) {
+    const profileResp = await BingoldApi.getProfile(token);
+    const info = extractProfile(profileResp);
+    if (!info.email && info.bingold_user_id == null) {
+        const err = new Error('Could not resolve BinGold identity from token');
+        err.statusCode = 401;
+        throw err;
+    }
+    const normalizedKyc = (() => {
+        const k = (info.kyc_status || '').toString().toLowerCase();
+        if (['approved', 'completed', 'green'].includes(k)) return 'approved';
+        if (['rejected', 'red'].includes(k)) return 'rejected';
+        if (['pending', 'init'].includes(k)) return 'pending';
+        return undefined;
+    })();
+    const user = await upsertUser({
+        email: info.email,
+        phone: info.phone,
+        first_name: info.first_name,
+        last_name: info.last_name,
+        bingold_user_id: info.bingold_user_id,
+        ...(normalizedKyc ? { kyc_status: normalizedKyc } : {}),
+        ...extra
+    });
+    return { user, info, raw: profileResp };
+}
+
+module.exports = { upsertUser, resolveFromToken, extractProfile };

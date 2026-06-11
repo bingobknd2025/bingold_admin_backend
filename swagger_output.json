@@ -2,11 +2,53 @@
   "swagger": "2.0",
   "info": {
     "title": "Bingold Admin API",
-    "description": "API for Bingold Admin Panel, including RBAC, Blogs and News",
+    "description": "API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.",
     "version": "1.0.0"
   },
   "host": "localhost:3000",
   "basePath": "/",
+  "tags": [
+    {
+      "name": "BingoPay - Customer Auth",
+      "description": "SSO onboarding/login proxied to BinGold"
+    },
+    {
+      "name": "BingoPay - Wallet",
+      "description": "Balance / ledger / withdraw (forwards the BinGold token)"
+    },
+    {
+      "name": "BingoPay - Merchant",
+      "description": "Vendor self-service: onboarding, QR, KYC, dashboard, withdraw"
+    },
+    {
+      "name": "BingoPay - Pay",
+      "description": "Customer QR payment flow: resolve, quote, confirm"
+    },
+    {
+      "name": "BingoPay - Webhooks",
+      "description": "Inbound provider webhooks (Sumsub)"
+    },
+    {
+      "name": "BingoPay Admin - Users",
+      "description": "Admin: BingoPay user mappings"
+    },
+    {
+      "name": "BingoPay Admin - Vendors",
+      "description": "Admin: vendor onboarding, approval, KYC (online + offline)"
+    },
+    {
+      "name": "BingoPay Admin - QR",
+      "description": "Admin: merchant payment QR oversight"
+    },
+    {
+      "name": "BingoPay Admin - Payments",
+      "description": "Admin: payment transaction oversight"
+    },
+    {
+      "name": "BingoPay Admin - Settlements",
+      "description": "Admin: vendor settlement batches"
+    }
+  ],
   "schemes": [
     "http",
     "https"
@@ -16,16 +58,216 @@
       "type": "apiKey",
       "in": "header",
       "name": "Authorization",
-      "description": "Enter your bearer token in the format **Bearer <token>**"
+      "description": "Bearer token. Admin endpoints: the admin JWT. BingoPay customer/merchant endpoints: the user's BinGold session token. Format: **Bearer <token>**"
+    },
+    "apiKeyAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "x-api-key",
+      "description": "Global API key (PDA_API_KEY). Required on every endpoint except the public webhook."
     }
   },
   "paths": {
+    "/verify/{code}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/verify": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/bingold/agents/verify/{code}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "user-agent",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/sitemap.xml": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/bingold/sitemap.xml": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/webhooks/sumsub": {
+      "post": {
+        "tags": [
+          "BingoPay - Webhooks"
+        ],
+        "summary": "Sumsub KYC webhook (authenticated by x-payload-digest HMAC; no api-key/JWT)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-payload-digest",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-payload-digest-alg",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": []
+      }
+    },
     "/health": {
       "get": {
         "description": "",
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -56,6 +298,12 @@
         "responses": {
           "201": {
             "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -83,6 +331,12 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -116,6 +370,12 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -140,6 +400,12 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -301,6 +567,12 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -325,6 +597,12 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }
@@ -406,6 +684,1487 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/blogs": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/blogs/{slug}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/news": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/news/{slug}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/youtube-videos": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "page": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                },
+                "platform": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/youtube-videos/{id}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/agents/verify": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "user-agent",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/user-exists": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Check if an email already has a BinGold account (and sync local mapping if it does)",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/register": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Register a new customer in BinGold (signup) and create local mapping",
+        "description": "",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "password",
+                  "confirmPassword",
+                  "countryId",
+                  "email",
+                  "phoneNumber",
+                  "recaptchaToken"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "John"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Passw0rd@123"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "example": "Passw0rd@123"
+                  },
+                  "countryId": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "9876543210"
+                  },
+                  "type": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "signup_as": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "referrerCode": {
+                    "type": "integer",
+                    "example": 123456
+                  },
+                  "recaptchaToken": {
+                    "type": "string",
+                    "example": "recaptcha-token"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/login": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Login via BinGold; returns BinGold tokens + local profile, otpRequired flag",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "recaptchaToken"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Passw0rd@123"
+                  },
+                  "recaptchaToken": {
+                    "type": "string",
+                    "example": "recaptcha-token"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/verify-otp": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Verify an OTP (signup/login/2fa) against BinGold",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "SIGNUP"
+                  },
+                  "tOtp": {
+                    "type": "string"
+                  },
+                  "newEmail": {
+                    "type": "string"
+                  },
+                  "google2faSecret": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/resend-otp": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Resend an OTP via BinGold",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "SIGNUP"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/wallet/balance": {
+      "post": {
+        "tags": [
+          "BingoPay - Wallet"
+        ],
+        "summary": "Get wallet balance from BinGold (requires BinGold token)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-bingold-token",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "portfolioBalance",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "portfolioBalance": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "optional, for audit attribution"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/wallet/profile": {
+      "get": {
+        "tags": [
+          "BingoPay - Wallet"
+        ],
+        "summary": "Get the BinGold user profile (requires BinGold token)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-bingold-token",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/wallet/ledger": {
+      "post": {
+        "tags": [
+          "BingoPay - Wallet"
+        ],
+        "summary": "Wallet ledger / transaction history (deposits, withdrawals, buys)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-bingold-token",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "buy"
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "coinSymbol": {
+                    "type": "string"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "size": {
+                    "type": "integer",
+                    "example": 20
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/wallet/withdraw": {
+      "post": {
+        "tags": [
+          "BingoPay - Wallet"
+        ],
+        "summary": "Request a withdrawal (BinGold enforces KYC-approved + 2FA)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-bingold-token",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "coin",
+                  "address"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "example": 50
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "USDT"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "0x1234..."
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/apply": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Apply to become a merchant (idempotent). Creates the vendor profile.",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "business_name"
+                ],
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "example": "ABC Store"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "registration_number": {
+                    "type": "string"
+                  },
+                  "gst_number": {
+                    "type": "string"
+                  },
+                  "pan_number": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "annual_turnover": {
+                    "type": "number"
+                  },
+                  "settle_coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "accepted_coins": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "BIGOD",
+                      "USDT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/me": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Get my merchant profile + status",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/settings": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Update settle_coin / accepted_coins and safe business fields",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "settle_coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "accepted_coins": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "BIGOD",
+                      "USDT",
+                      "BNB"
+                    ]
+                  },
+                  "business_name": {
+                    "type": "string"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/qr/create": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Create a payment QR (static = open/fixed, dynamic = per-charge)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qr_type": {
+                    "type": "string",
+                    "enum": [
+                      "static",
+                      "dynamic"
+                    ],
+                    "example": "static"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "omit for open amount"
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/qr/list": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "List my QR codes",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "qr_type": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/qr/toggle": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Enable/disable one of my QR codes",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/kyc/submit": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Submit offline KYC documents (multipart; one file per type)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certificate_of_incorporation": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "gst_certificate": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "pan_card": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "director_id": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "address_proof": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "bank_statement": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "other": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/kyc/documents": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "List my submitted KYC documents + statuses",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/dashboard": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Sales dashboard: totals + earnings by coin (today and overall)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/payments": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "My received payments (merchant payment log)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "coin": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/merchant/withdraw": {
+      "post": {
+        "tags": [
+          "BingoPay - Merchant"
+        ],
+        "summary": "Withdraw earnings (proxies BinGold withdraw_request)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "coin",
+                  "address"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "USDT"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/pay/resolve/{qrUuid}": {
+      "get": {
+        "tags": [
+          "BingoPay - Pay"
+        ],
+        "summary": "Resolve a scanned QR to merchant info + accepted coins",
+        "description": "",
+        "parameters": [
+          {
+            "name": "qrUuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/pay/resolve": {
+      "post": {
+        "tags": [
+          "BingoPay - Pay"
+        ],
+        "summary": "Resolve a QR (uuid in body) to merchant info + accepted coins",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "qrUuid"
+                ],
+                "properties": {
+                  "qrUuid": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/pay/quote": {
+      "post": {
+        "tags": [
+          "BingoPay - Pay"
+        ],
+        "summary": "Quote: how much payCoin is needed (USD-based conversion to merchant settle coin)",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "qrUuid",
+                  "payCoin"
+                ],
+                "properties": {
+                  "qrUuid": {
+                    "type": "string"
+                  },
+                  "payCoin": {
+                    "type": "string",
+                    "example": "USDT"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "required for open-amount QR"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/pay/confirm": {
+      "post": {
+        "tags": [
+          "BingoPay - Pay"
+        ],
+        "summary": "Confirm + execute payment. Records the txn and calls the BinGold transfer adapter (transferPending=true until BINGOLD_TRANSFER_PATH is set).",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "x-bingold-token",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "qrUuid"
+                ],
+                "properties": {
+                  "qrUuid": {
+                    "type": "string"
+                  },
+                  "payCoin": {
+                    "type": "string",
+                    "example": "USDT"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "pin": {
+                    "type": "string"
+                  },
+                  "otp": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1271,6 +3030,12 @@
             "schema": {
               "type": "object",
               "properties": {
+                "cover_image": {
+                  "example": "any"
+                },
+                "attch": {
+                  "example": "any"
+                },
                 "title": {
                   "example": "any"
                 },
@@ -1281,6 +3046,18 @@
                   "example": "any"
                 },
                 "category": {
+                  "example": "any"
+                },
+                "meta_title": {
+                  "example": "any"
+                },
+                "meta_description": {
+                  "example": "any"
+                },
+                "meta_keyword": {
+                  "example": "any"
+                },
+                "note": {
                   "example": "any"
                 }
               }
@@ -1391,6 +3168,12 @@
             "schema": {
               "type": "object",
               "properties": {
+                "cover_image": {
+                  "example": "any"
+                },
+                "attch": {
+                  "example": "any"
+                },
                 "id": {
                   "example": "any"
                 }
@@ -1461,16 +3244,40 @@
             "schema": {
               "type": "object",
               "properties": {
+                "cover_image": {
+                  "example": "any"
+                },
+                "image": {
+                  "example": "any"
+                },
                 "title": {
                   "example": "any"
                 },
                 "slug": {
                   "example": "any"
                 },
+                "short_description": {
+                  "example": "any"
+                },
+                "description": {
+                  "example": "any"
+                },
                 "status": {
                   "example": "any"
                 },
                 "category": {
+                  "example": "any"
+                },
+                "meta_title": {
+                  "example": "any"
+                },
+                "meta_description": {
+                  "example": "any"
+                },
+                "meta_keyword": {
+                  "example": "any"
+                },
+                "published_at": {
                   "example": "any"
                 }
               }
@@ -1581,6 +3388,12 @@
             "schema": {
               "type": "object",
               "properties": {
+                "cover_image": {
+                  "example": "any"
+                },
+                "image": {
+                  "example": "any"
+                },
                 "id": {
                   "example": "any"
                 }
@@ -1635,9 +3448,1870 @@
           }
         }
       }
+    },
+    "/api/bingold/admin/youtube/create": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "example": "any"
+                },
+                "video_url": {
+                  "example": "any"
+                },
+                "platform": {
+                  "example": "any"
+                },
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/youtube/list": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "page": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                },
+                "filters": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/youtube/view": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/youtube/update": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                },
+                "platform": {
+                  "example": "any"
+                },
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/youtube/delete": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/create": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "photo": {
+                  "example": "any"
+                },
+                "name": {
+                  "example": "any"
+                },
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/list": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "page": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                },
+                "filters": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/view": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/update": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "photo": {
+                  "example": "any"
+                },
+                "id": {
+                  "example": "any"
+                },
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/regenerate-qr": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/agents/delete": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/common/upload-file": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/common/delete-file": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "public_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/users/list": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Users"
+        ],
+        "summary": "List BingoPay users (mappings to BinGold)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "search": {
+                    "type": "string"
+                  },
+                  "account_type": {
+                    "type": "string",
+                    "enum": [
+                      "customer",
+                      "vendor",
+                      "merchant_staff"
+                    ]
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "kyc_status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/users/view": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Users"
+        ],
+        "summary": "Get one BingoPay user",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/users/change-status": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Users"
+        ],
+        "summary": "Change a BingoPay user status (pending|active|blocked|suspended)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/users/check-bingold": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Users"
+        ],
+        "summary": "Check an email against BinGold (user_exists) and persist the mapping if it exists",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/create": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Onboard a vendor (admin). Provide user_id OR email/phone + business details.",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "business_name"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "business_name": {
+                    "type": "string",
+                    "example": "ABC Store"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "gst_number": {
+                    "type": "string"
+                  },
+                  "pan_number": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "annual_turnover": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/list": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "List vendors (paginated, filterable)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "search": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "kyc_status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/view": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Get one vendor",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/update": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Update vendor business fields",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "business_name": {
+                    "type": "string"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "gst_number": {
+                    "type": "string"
+                  },
+                  "pan_number": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/approve": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Approve vendor (kyc_status=approved, status=active)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/reject": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Reject vendor",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/change-status": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Set vendor status (pending|active|suspended|rejected)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/initiate-kyc": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Start Sumsub (online) KYC; returns applicant_id + WebSDK access_token",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/kyc/submit": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Submit offline KYC documents for a vendor (multipart). vendor_id as form field.",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendor_id"
+                ],
+                "properties": {
+                  "vendor_id": {
+                    "type": "integer"
+                  },
+                  "certificate_of_incorporation": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "gst_certificate": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "pan_card": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "director_id": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "address_proof": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "bank_statement": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "other": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/kyc/documents": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "List offline KYC documents for a vendor",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendor_id"
+                ],
+                "properties": {
+                  "vendor_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/vendors/kyc/review-document": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Approve/reject a single KYC document",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "document_id",
+                  "status"
+                ],
+                "properties": {
+                  "document_id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected",
+                      "pending"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/qr/create": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - QR"
+        ],
+        "summary": "Create a payment QR for a vendor (admin)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendor_id"
+                ],
+                "properties": {
+                  "vendor_id": {
+                    "type": "integer"
+                  },
+                  "qr_type": {
+                    "type": "string",
+                    "enum": [
+                      "static",
+                      "dynamic"
+                    ]
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/qr/list": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - QR"
+        ],
+        "summary": "List payment QR codes",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "vendor_id": {
+                    "type": "integer"
+                  },
+                  "qr_type": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/qr/view": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - QR"
+        ],
+        "summary": "Get one payment QR",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/qr/change-status": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - QR"
+        ],
+        "summary": "Enable/disable a payment QR",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/payments/list": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Payments"
+        ],
+        "summary": "List payment transactions (paginated, filterable)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "coin": {
+                    "type": "string"
+                  },
+                  "receiver_vendor_id": {
+                    "type": "integer"
+                  },
+                  "from": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "to": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/payments/view": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Payments"
+        ],
+        "summary": "Get one payment transaction",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/payments/stats": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Payments"
+        ],
+        "summary": "Payment stats (counts + total success amount)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receiver_vendor_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/settlements/create": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Settlements"
+        ],
+        "summary": "Create a settlement batch for a vendor",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vendor_id",
+                  "total_amount"
+                ],
+                "properties": {
+                  "vendor_id": {
+                    "type": "integer"
+                  },
+                  "total_amount": {
+                    "type": "number"
+                  },
+                  "coin": {
+                    "type": "string",
+                    "example": "BIGOD"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/settlements/list": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Settlements"
+        ],
+        "summary": "List settlement batches",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "vendor_id": {
+                    "type": "integer"
+                  },
+                  "settlement_status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/settlements/view": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Settlements"
+        ],
+        "summary": "Get one settlement",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/admin/bingopay/settlements/update-status": {
+      "post": {
+        "tags": [
+          "BingoPay Admin - Settlements"
+        ],
+        "summary": "Advance settlement status (pending->processing->completed / failed)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "processing",
+                      "completed",
+                      "failed",
+                      "pending"
+                    ]
+                  },
+                  "bingold_withdraw_reference": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "security": [
+    {
+      "apiKeyAuth": []
+    },
     {
       "bearerAuth": []
     }

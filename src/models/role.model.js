@@ -22,6 +22,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
+        scope: {
+            // 'admin' = back-office CMS roles (pda_users); 'bingopay' = payment
+            // ecosystem roles (customers, vendors, cashiers). Existing roles
+            // default to 'admin' so current behaviour is unchanged.
+            type: DataTypes.ENUM('admin', 'bingopay'),
+            allowNull: false,
+            defaultValue: 'admin'
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true

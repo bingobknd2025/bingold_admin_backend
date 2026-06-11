@@ -42,7 +42,12 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  // Stash the raw body so webhook handlers (e.g. Sumsub) can verify HMAC
+  // signatures against the exact bytes that were sent.
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (process.env.NODE_ENV === 'development') {
@@ -50,35 +55,40 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Public QR-scan verification entry points. Browsers hitting the QR URL
-// must work without x-api-key, so these are mounted BEFORE apiKeyMiddleware.
-// Both routes 302-redirect to the frontend app (PUBLIC_VERIFY_BASE_URL),
-// which then calls POST /api/bingold/agents/verify/:code to render results.
 const publicAgentController = require('./controllers/public/agent.public.controller');
 app.get('/verify/:code', publicAgentController.verifyAgentRedirect);
 app.get('/verify', publicAgentController.verifyAgentRedirect);
 app.get('/api/bingold/agents/verify/:code', publicAgentController.verifyAgentRedirect);
 
-// Public sitemap.xml — crawler-facing, no auth, cached in-memory.
 const sitemapController = require('./controllers/public/sitemap.public.controller');
 app.get('/sitemap.xml', sitemapController.getSitemap);
 app.get('/api/bingold/sitemap.xml', sitemapController.getSitemap);
+
+const sumsubPublicController = require('./controllers/public/sumsub.public.controller');
+app.post('/api/bingold/webhooks/sumsub',
+  /*  #swagger.tags = ['BingoPay - Webhooks']
+      #swagger.summary = 'Sumsub KYC webhook (authenticated by x-payload-digest HMAC; no api-key/JWT)'
+      #swagger.security = [] */
+  sumsubPublicController.handleWebhook);
+
+// Swagger UI — public docs page, mounted BEFORE the api-key middleware so the
+// browser can load it without an x-api-key header.
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../swagger_output.json');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(apiKeyMiddleware);
 
 app.use("/api/bingold/auth", require("./routes/auth.routes"));
 
-// Public routes (no auth required)
 app.use("/api/bingold", require("./routes/public/public.routes"));
 
+app.use("/api/bingold/bingopay", require("./routes/bingopay/customer.routes"));
+app.use("/api/bingold/bingopay/merchant", require("./routes/bingopay/merchant.routes"));
+app.use("/api/bingold/bingopay/pay", require("./routes/bingopay/pay.routes"));
+
 app.use("/api/bingold", jwtAuthMiddleware);
-
 app.use("/api/bingold/admin", require("./routes/admin/admin.routes"));
-
-// Swagger documentation route
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../swagger_output.json');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/health", (req, res) => {
   res.json({

@@ -11,6 +11,9 @@ router.use("/youtube", require("../admin/youtube_video.routes"));
 router.use("/agents", require("../admin/agent.routes"));
 router.use("/common", require("../admin/common.routes"));
 
+// BingoPay payment ecosystem (vendors, merchant QR, payments, settlements)
+router.use("/bingopay", require("../admin/bingopay"));
+
 router.post("/dashboard", async (req, res, next) => {
     try {
         const {

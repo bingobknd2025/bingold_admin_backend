@@ -3,20 +3,38 @@ const swaggerAutogen = require('swagger-autogen')();
 const doc = {
   info: {
     title: 'Bingold Admin API',
-    description: 'API for Bingold Admin Panel, including RBAC, Blogs and News',
+    description: 'API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.',
   },
   host: 'localhost:3000',
   basePath: '/',
   schemes: ['http', 'https'],
+  tags: [
+    { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },
+    { name: 'BingoPay - Wallet', description: 'Balance / ledger / withdraw (forwards the BinGold token)' },
+    { name: 'BingoPay - Merchant', description: 'Vendor self-service: onboarding, QR, KYC, dashboard, withdraw' },
+    { name: 'BingoPay - Pay', description: 'Customer QR payment flow: resolve, quote, confirm' },
+    { name: 'BingoPay - Webhooks', description: 'Inbound provider webhooks (Sumsub)' },
+    { name: 'BingoPay Admin - Users', description: 'Admin: BingoPay user mappings' },
+    { name: 'BingoPay Admin - Vendors', description: 'Admin: vendor onboarding, approval, KYC (online + offline)' },
+    { name: 'BingoPay Admin - QR', description: 'Admin: merchant payment QR oversight' },
+    { name: 'BingoPay Admin - Payments', description: 'Admin: payment transaction oversight' },
+    { name: 'BingoPay Admin - Settlements', description: 'Admin: vendor settlement batches' }
+  ],
   securityDefinitions: {
     bearerAuth: {
       type: 'apiKey',
       in: 'header',
       name: 'Authorization',
-      description: 'Enter your bearer token in the format **Bearer <token>**'
+      description: 'Bearer token. Admin endpoints: the admin JWT. BingoPay customer/merchant endpoints: the user\'s BinGold session token. Format: **Bearer <token>**'
+    },
+    apiKeyAuth: {
+      type: 'apiKey',
+      in: 'header',
+      name: 'x-api-key',
+      description: 'Global API key (PDA_API_KEY). Required on every endpoint except the public webhook.'
     }
   },
-  security: [{ bearerAuth: [] }]
+  security: [{ apiKeyAuth: [] }, { bearerAuth: [] }]
 };
 
 const outputFile = './swagger_output.json';
