@@ -1,11 +1,16 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.0.0",
   "info": {
     "title": "Bingold Admin API",
     "description": "API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.",
     "version": "1.0.0"
   },
-  "basePath": "/",
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current origin"
+    }
+  ],
   "tags": [
     {
       "name": "BingoPay - Customer Auth",
@@ -48,24 +53,6 @@
       "description": "Admin: vendor settlement batches"
     }
   ],
-  "schemes": [
-    "http",
-    "https"
-  ],
-  "securityDefinitions": {
-    "bearerAuth": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "Authorization",
-      "description": "Bearer token. Admin endpoints: the admin JWT. BingoPay customer/merchant endpoints: the user's BinGold session token. Format: **Bearer <token>**"
-    },
-    "apiKeyAuth": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "x-api-key",
-      "description": "Global API key (PDA_API_KEY). Required on every endpoint except the public webhook."
-    }
-  },
   "paths": {
     "/verify/{code}": {
       "get": {
@@ -75,12 +62,16 @@
             "name": "code",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "code",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -97,7 +88,9 @@
           {
             "name": "code",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -115,17 +108,23 @@
             "name": "code",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "code",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -144,33 +143,29 @@
             "name": "code",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-forwarded-for",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "user-agent",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "code",
             "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -180,6 +175,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -201,7 +210,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -228,17 +239,23 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-payload-digest",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-payload-digest-alg",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -274,26 +291,6 @@
     "/api/bingold/auth/register": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "password": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "201": {
             "description": "Created"
@@ -304,29 +301,32 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
     "/api/bingold/auth/login": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "example": "any"
-                },
-                "password": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -336,6 +336,23 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -343,29 +360,6 @@
     "/api/bingold/auth/verify-otp": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "example": "any"
-                },
-                "otp": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "method": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -375,6 +369,29 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "example": "any"
+                  },
+                  "otp": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
+                  "method": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -382,20 +399,6 @@
     "/api/bingold/auth/forgot-password": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -405,6 +408,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -416,18 +433,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "newPassword": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -440,6 +447,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newPassword": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -451,21 +472,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "oldPassword": {
-                  "example": "any"
-                },
-                "method": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -478,6 +486,23 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "oldPassword": {
+                    "example": "any"
+                  },
+                  "method": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -489,24 +514,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "otp": {
-                  "example": "any"
-                },
-                "newPassword": {
-                  "example": "any"
-                },
-                "method": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -520,6 +529,26 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "otp": {
+                    "example": "any"
+                  },
+                  "newPassword": {
+                    "example": "any"
+                  },
+                  "method": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -530,7 +559,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -549,20 +580,6 @@
     "/api/bingold/auth/setup-otp": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -572,6 +589,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -579,20 +610,6 @@
     "/api/bingold/auth/refresh-token": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "refreshToken": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -602,6 +619,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -613,18 +644,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "refreshToken": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -638,6 +659,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -648,7 +683,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -671,7 +708,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -694,17 +733,23 @@
           {
             "name": "page",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "category",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -728,7 +773,9 @@
             "name": "slug",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -751,17 +798,23 @@
           {
             "name": "page",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "category",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -785,7 +838,9 @@
             "name": "slug",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -808,34 +863,22 @@
           {
             "name": "page",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "platform",
             "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "platform": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -848,6 +891,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "platform": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -860,18 +923,8 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -885,6 +938,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -895,28 +962,22 @@
           {
             "name": "x-forwarded-for",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "user-agent",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "code",
             "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -926,6 +987,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1218,17 +1293,23 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-bingold-token",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "portfolioBalance",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1274,17 +1355,23 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-bingold-token",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "email",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1311,12 +1398,16 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-bingold-token",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1373,12 +1464,16 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-bingold-token",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1437,7 +1532,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1521,7 +1618,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1548,7 +1647,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1613,7 +1714,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1670,7 +1773,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1720,7 +1825,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1769,7 +1876,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1839,7 +1948,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1866,7 +1977,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1893,7 +2006,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1943,7 +2058,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2001,7 +2118,9 @@
             "name": "qrUuid",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2113,12 +2232,16 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "x-bingold-token",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2175,7 +2298,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2198,7 +2323,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2221,27 +2348,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "search": {
-                  "example": "any"
-                },
-                "module": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2255,6 +2363,29 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "search": {
+                    "example": "any"
+                  },
+                  "module": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -2265,17 +2396,23 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "search",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "module",
             "in": "query",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2298,7 +2435,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2321,18 +2460,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2345,6 +2474,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2356,21 +2499,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                },
-                "data": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2383,6 +2513,23 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "data": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2394,18 +2541,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2419,6 +2556,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -2429,7 +2580,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2452,24 +2605,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "search": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2482,6 +2619,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "search": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2493,18 +2650,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "roleId": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2517,6 +2664,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roleId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2528,21 +2689,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "roleId": {
-                  "example": "any"
-                },
-                "data": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2555,6 +2703,23 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roleId": {
+                    "example": "any"
+                  },
+                  "data": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2566,18 +2731,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2590,6 +2745,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2601,18 +2770,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "roleId": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2625,6 +2784,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roleId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2636,24 +2809,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "roleId": {
-                  "example": "any"
-                },
-                "permission_ids": {
-                  "example": "any"
-                },
-                "assignAll": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2666,6 +2823,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roleId": {
+                    "example": "any"
+                  },
+                  "permission_ids": {
+                    "example": "any"
+                  },
+                  "assignAll": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2677,24 +2854,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "roleId": {
-                  "example": "any"
-                },
-                "permission_ids": {
-                  "example": "any"
-                },
-                "removeAll": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2708,6 +2869,26 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roleId": {
+                    "example": "any"
+                  },
+                  "permission_ids": {
+                    "example": "any"
+                  },
+                  "removeAll": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -2718,7 +2899,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2741,7 +2924,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2764,24 +2949,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "password": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2794,6 +2963,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2805,24 +2994,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "filters": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2835,6 +3008,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "filters": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2846,18 +3039,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2870,6 +3053,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2881,18 +3078,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2905,6 +3092,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2916,18 +3117,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2940,6 +3131,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2951,18 +3156,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "status": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -2975,6 +3170,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2986,18 +3195,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3010,6 +3209,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3021,45 +3234,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "cover_image": {
-                  "example": "any"
-                },
-                "attch": {
-                  "example": "any"
-                },
-                "title": {
-                  "example": "any"
-                },
-                "slug": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                },
-                "category": {
-                  "example": "any"
-                },
-                "meta_title": {
-                  "example": "any"
-                },
-                "meta_description": {
-                  "example": "any"
-                },
-                "meta_keyword": {
-                  "example": "any"
-                },
-                "note": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3072,6 +3248,47 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cover_image": {
+                    "example": "any"
+                  },
+                  "attch": {
+                    "example": "any"
+                  },
+                  "title": {
+                    "example": "any"
+                  },
+                  "slug": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  },
+                  "category": {
+                    "example": "any"
+                  },
+                  "meta_title": {
+                    "example": "any"
+                  },
+                  "meta_description": {
+                    "example": "any"
+                  },
+                  "meta_keyword": {
+                    "example": "any"
+                  },
+                  "note": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3083,24 +3300,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "filters": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3113,6 +3314,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "filters": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3124,18 +3345,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3148,6 +3359,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3159,24 +3384,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "cover_image": {
-                  "example": "any"
-                },
-                "attch": {
-                  "example": "any"
-                },
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3189,6 +3398,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cover_image": {
+                    "example": "any"
+                  },
+                  "attch": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3200,18 +3429,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3224,6 +3443,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3235,51 +3468,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "cover_image": {
-                  "example": "any"
-                },
-                "image": {
-                  "example": "any"
-                },
-                "title": {
-                  "example": "any"
-                },
-                "slug": {
-                  "example": "any"
-                },
-                "short_description": {
-                  "example": "any"
-                },
-                "description": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                },
-                "category": {
-                  "example": "any"
-                },
-                "meta_title": {
-                  "example": "any"
-                },
-                "meta_description": {
-                  "example": "any"
-                },
-                "meta_keyword": {
-                  "example": "any"
-                },
-                "published_at": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3292,6 +3482,53 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cover_image": {
+                    "example": "any"
+                  },
+                  "image": {
+                    "example": "any"
+                  },
+                  "title": {
+                    "example": "any"
+                  },
+                  "slug": {
+                    "example": "any"
+                  },
+                  "short_description": {
+                    "example": "any"
+                  },
+                  "description": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  },
+                  "category": {
+                    "example": "any"
+                  },
+                  "meta_title": {
+                    "example": "any"
+                  },
+                  "meta_description": {
+                    "example": "any"
+                  },
+                  "meta_keyword": {
+                    "example": "any"
+                  },
+                  "published_at": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3303,24 +3540,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "filters": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3333,6 +3554,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "filters": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3344,18 +3585,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3368,6 +3599,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3379,24 +3624,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "cover_image": {
-                  "example": "any"
-                },
-                "image": {
-                  "example": "any"
-                },
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3409,6 +3638,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cover_image": {
+                    "example": "any"
+                  },
+                  "image": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3420,18 +3669,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3444,6 +3683,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3455,27 +3708,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "title": {
-                  "example": "any"
-                },
-                "video_url": {
-                  "example": "any"
-                },
-                "platform": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3488,6 +3722,29 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "example": "any"
+                  },
+                  "video_url": {
+                    "example": "any"
+                  },
+                  "platform": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3499,24 +3756,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "filters": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3529,6 +3770,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "filters": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3540,18 +3801,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3564,6 +3815,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3575,24 +3840,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                },
-                "platform": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3605,6 +3854,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "platform": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3616,18 +3885,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3641,6 +3900,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3651,24 +3924,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "photo": {
-                  "example": "any"
-                },
-                "name": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3682,6 +3939,26 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "example": "any"
+                  },
+                  "name": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3692,24 +3969,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "page": {
-                  "example": "any"
-                },
-                "limit": {
-                  "example": "any"
-                },
-                "filters": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3722,6 +3983,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  },
+                  "filters": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3733,18 +4014,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3757,6 +4028,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3768,24 +4053,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "photo": {
-                  "example": "any"
-                },
-                "id": {
-                  "example": "any"
-                },
-                "status": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3798,6 +4067,26 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  },
+                  "status": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3809,18 +4098,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3833,6 +4112,20 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3844,18 +4137,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3869,6 +4152,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3879,7 +4176,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3908,18 +4207,8 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "public_id": {
-                  "example": "any"
-                }
-              }
+              "type": "string"
             }
           }
         ],
@@ -3936,6 +4225,20 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "public_id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3950,7 +4253,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4011,7 +4316,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4056,7 +4363,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4105,7 +4414,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4150,7 +4461,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4223,7 +4536,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4276,7 +4591,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4321,7 +4638,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4384,7 +4703,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4429,7 +4750,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4477,7 +4800,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4526,7 +4851,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4571,7 +4898,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4647,7 +4976,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4692,7 +5023,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4749,7 +5082,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4811,7 +5146,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4864,7 +5201,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4909,7 +5248,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4958,7 +5299,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5019,7 +5362,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5064,7 +5409,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5105,7 +5452,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5161,7 +5510,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5211,7 +5562,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5256,7 +5609,9 @@
           {
             "name": "authorization",
             "in": "header",
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5304,6 +5659,22 @@
             }
           }
         }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Admin endpoints: the admin JWT. BingoPay customer/merchant endpoints: the user's BinGold session token."
+      },
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Global API key (PDA_API_KEY). Required on every endpoint except the public webhook."
       }
     }
   },
