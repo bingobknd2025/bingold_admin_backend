@@ -5,8 +5,14 @@ const doc = {
     title: 'Bingold Admin API',
     description: 'API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.',
   },
-  host: 'localhost:3000',
-  basePath: '/',
+  // Omit host so Swagger UI sends "Try it out" requests to the same origin the
+  // docs are opened from (works locally and on the server). Override with
+  // SWAGGER_HOST (e.g. "api.bingold.to") if you need a fixed target.
+  host: process.env.SWAGGER_HOST || undefined,
+  // Behind a reverse proxy that adds a path prefix (e.g. nginx maps
+  // /api -> node root), set SWAGGER_BASE_PATH=/api so "Try it out" targets the
+  // proxied URL. Defaults to '/' for direct/local access.
+  basePath: process.env.SWAGGER_BASE_PATH || '/',
   schemes: ['http', 'https'],
   tags: [
     { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },

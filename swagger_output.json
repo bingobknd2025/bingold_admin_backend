@@ -5,7 +5,6 @@
     "description": "API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.",
     "version": "1.0.0"
   },
-  "host": "localhost:3000",
   "basePath": "/",
   "tags": [
     {
