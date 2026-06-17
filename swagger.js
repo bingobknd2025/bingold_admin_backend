@@ -1,6 +1,8 @@
 // Generate an OpenAPI 3.0 spec. 3.0 (vs Swagger 2.0) is required so that
 // `requestBody` annotations render as editable body fields in Swagger UI, and
 // so multipart/form-data file uploads document correctly.
+// Load .env so SWAGGER_SERVER_URL (e.g. '/api' behind the nginx proxy) is honored.
+require('dotenv').config();
 const swaggerAutogen = require('swagger-autogen')({ openapi: '3.0.0' });
 
 const doc = {
@@ -8,13 +10,20 @@ const doc = {
     title: 'Bingold Admin API',
     description: 'API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.',
   },
-  // OpenAPI 3.0 uses `servers` instead of host/basePath/schemes.
-  //  - Local/direct:      leave SWAGGER_SERVER_URL unset -> '/' (current origin)
-  //  - Behind /api proxy: set SWAGGER_SERVER_URL=/api so "Try it out" hits the
-  //    proxied path (origin + /api + /api/bingold/...).
-  servers: [
-    { url: process.env.SWAGGER_SERVER_URL || '/', description: 'Current origin' }
-  ],
+  // OpenAPI 3.0 uses `servers` instead of host/basePath/schemes. We expose BOTH
+  // bases so one committed spec works everywhere — pick the right one from the
+  // Swagger UI "Servers" dropdown:
+  //  - '/'    : direct/local (no proxy), e.g. http://localhost:3000
+  //  - '/api' : behind the nginx /api reverse proxy (staging/prod), which strips
+  //             /api, so requests must go to origin + /api + /api/v1/...
+  // Set SWAGGER_SERVER_URL to force a specific default (first in the list).
+  servers: [...new Set([process.env.SWAGGER_SERVER_URL, '/', '/api'].filter(Boolean))]
+    .map((url) => ({
+      url,
+      description: url === '/api'
+        ? 'Behind /api reverse proxy (staging/prod)'
+        : url === '/' ? 'Direct (local, no proxy)' : 'Configured default'
+    })),
   tags: [
     { name: 'Vendor SSO', description: 'Partner/SSO-facing vendor flow: QR handoff, register/login, KYC/KYB (x-api-key only, vendors addressed by uuid)' },
     { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },

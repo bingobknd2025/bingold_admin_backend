@@ -7,8 +7,12 @@
   },
   "servers": [
     {
+      "url": "/api",
+      "description": "Behind /api reverse proxy (staging/prod)"
+    },
+    {
       "url": "/",
-      "description": "Current origin"
+      "description": "Direct (local, no proxy)"
     }
   ],
   "tags": [
