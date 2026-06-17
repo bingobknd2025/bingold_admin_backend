@@ -2272,6 +2272,10 @@
     },
     "/api/v1/common/vendors/sso/register": {
       "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Register a vendor via BinGold external API (server-to-server, no OTP). Stores the SAME BinGold uuid on both tables and returns a vendor JWT + BinGold token.",
         "description": "",
         "responses": {
           "201": {
@@ -2283,11 +2287,92 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "shopName",
+                  "shopSlug",
+                  "email",
+                  "phone",
+                  "password",
+                  "countryId"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Strong: 8+ chars incl. upper/lower/number/special"
+                  },
+                  "countryId": {
+                    "type": "string",
+                    "description": "Dialing code, e.g. 91"
+                  },
+                  "shopName": {
+                    "type": "string"
+                  },
+                  "shopSlug": {
+                    "type": "string"
+                  },
+                  "businessName": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "gstNumber": {
+                    "type": "string"
+                  },
+                  "panNumber": {
+                    "type": "string"
+                  },
+                  "supportEmail": {
+                    "type": "string"
+                  },
+                  "supportPhone": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "fullName": "Acme Owner",
+                "email": "owner@acme.com",
+                "phone": "9876543210",
+                "password": "Secret@123",
+                "countryId": "91",
+                "shopName": "Acme Store",
+                "shopSlug": "acme-store",
+                "businessName": "Acme Pvt Ltd",
+                "description": "We sell gadgets",
+                "gstNumber": "22AAAAA0000A1Z5",
+                "panNumber": "AAAAA0000A",
+                "supportEmail": "support@acme.com",
+                "supportPhone": "9876543211"
+              }
+            }
+          }
         }
       }
     },
     "/api/v1/common/vendors/sso/login": {
       "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Vendor login (identifier = email or phone) against the local password; refreshes status from BinGold. Returns a marketplace JWT.",
         "description": "",
         "responses": {
           "200": {
@@ -2298,12 +2383,42 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "identifier",
+                  "password"
+                ],
+                "properties": {
+                  "identifier": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "identifier": "owner@acme.com",
+                "password": "Secret@123"
+              }
+            }
           }
         }
       }
     },
     "/api/v1/common/vendors/sso/verify": {
       "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Verify a scanned SSO token (marks it USED).",
         "description": "",
         "responses": {
           "200": {
@@ -2315,11 +2430,40 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "scannedByUserUuid": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "token": "<rawToken from the QR response>",
+                "scannedByUserUuid": "a1b2c3d4-1111-2222-3333-444455556666"
+              }
+            }
+          }
         }
       }
     },
     "/api/v1/common/vendors/sso/status/{token}": {
       "get": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Poll an SSO token status (PENDING | USED | EXPIRED).",
         "description": "",
         "parameters": [
           {
@@ -2343,6 +2487,10 @@
     },
     "/api/v1/common/vendors/sso/vendor-status/{identifier}": {
       "get": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Check a vendor status by vendor uuid or owner email.",
         "description": "",
         "parameters": [
           {
@@ -2351,7 +2499,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "vendor uuid or owner email"
           }
         ],
         "responses": {
@@ -2369,6 +2518,10 @@
     },
     "/api/v1/common/vendors/{uuid}/sso/qr": {
       "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Generate an SSO QR + token for a vendor.",
         "description": "",
         "parameters": [
           {
@@ -2389,12 +2542,37 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ttlSeconds": {
+                    "type": "integer"
+                  },
+                  "redirectUrl": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "ttlSeconds": 300,
+                "redirectUrl": "https://partner-app.com/vendor-sso/verify"
+              }
+            }
           }
         }
       }
     },
     "/api/v1/common/vendors/{uuid}/sso/kyc": {
       "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Submit KYC/KYB documents (by URL) for a vendor.",
         "description": "",
         "parameters": [
           {
@@ -2416,9 +2594,70 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "documents"
+                ],
+                "properties": {
+                  "kybMode": {
+                    "type": "string",
+                    "enum": [
+                      "ONLINE",
+                      "OFFLINE"
+                    ]
+                  },
+                  "documents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "documentType",
+                        "documentUrl"
+                      ],
+                      "properties": {
+                        "documentType": {
+                          "type": "string"
+                        },
+                        "documentUrl": {
+                          "type": "string"
+                        },
+                        "publicId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "kybMode": "ONLINE",
+                "documents": [
+                  {
+                    "documentType": "GST_CERTIFICATE",
+                    "documentUrl": "https://res.cloudinary.com/demo/upload/gst.pdf",
+                    "publicId": "vendor_docs/gst_abc"
+                  },
+                  {
+                    "documentType": "PAN_CARD",
+                    "documentUrl": "https://res.cloudinary.com/demo/upload/pan.jpg"
+                  }
+                ]
+              }
+            }
+          }
         }
       },
       "get": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Get KYC status + documents for a vendor.",
         "description": "",
         "parameters": [
           {
@@ -2445,6 +2684,10 @@
     },
     "/api/v1/common/vendors/{uuid}/sso/kyc/decision": {
       "patch": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Apply a KYC/KYB decision (APPROVED | REJECTED | RECHECK).",
         "description": "",
         "parameters": [
           {
@@ -2465,6 +2708,74 @@
           },
           "403": {
             "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "result"
+                ],
+                "properties": {
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVED",
+                      "REJECTED",
+                      "RECHECK"
+                    ]
+                  },
+                  "amlStatus": {
+                    "type": "string"
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "reviewedBy": {
+                    "type": "string"
+                  }
+                }
+              },
+              "examples": {
+                "Approve": {
+                  "summary": "Approve",
+                  "value": {
+                    "result": "APPROVED",
+                    "amlStatus": "CLEAR",
+                    "reviewedBy": "provider-x"
+                  }
+                },
+                "Reject": {
+                  "summary": "Reject",
+                  "value": {
+                    "result": "REJECTED",
+                    "reasons": [
+                      "GST certificate unreadable"
+                    ],
+                    "reviewedBy": "provider-x"
+                  }
+                },
+                "Recheck": {
+                  "summary": "Recheck",
+                  "value": {
+                    "result": "RECHECK",
+                    "message": "Please re-upload a clearer PAN card",
+                    "reasons": [
+                      "PAN blurry"
+                    ]
+                  }
+                }
+              }
+            }
           }
         }
       }
