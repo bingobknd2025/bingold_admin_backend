@@ -16,6 +16,7 @@ const doc = {
     { url: process.env.SWAGGER_SERVER_URL || '/', description: 'Current origin' }
   ],
   tags: [
+    { name: 'Vendor SSO', description: 'Partner/SSO-facing vendor flow: QR handoff, register/login, KYC/KYB (x-api-key only, vendors addressed by uuid)' },
     { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },
     { name: 'BingoPay - Wallet', description: 'Balance / ledger / withdraw (forwards the BinGold token)' },
     { name: 'BingoPay - Merchant', description: 'Vendor self-service: onboarding, QR, KYC, dashboard, withdraw' },

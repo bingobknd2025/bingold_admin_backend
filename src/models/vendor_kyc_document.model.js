@@ -34,6 +34,12 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(500),
             allowNull: false
         },
+        // Cloudinary (or other store) public id for the asset, when supplied by
+        // the SSO KYC submission so the file can be managed/deleted later.
+        public_id: {
+            type: DataTypes.STRING(255),
+            allowNull: true
+        },
         file_name: {
             type: DataTypes.STRING(255),
             allowNull: true

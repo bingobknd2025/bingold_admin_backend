@@ -12,6 +12,14 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             allowNull: false
         },
+        // Shared identity UUID issued by BinGold at registration — the SAME value
+        // is stored on vendor_profiles.uuid, so the vendor has one identity across
+        // both platforms. Nullable for legacy/customer rows that predate SSO.
+        uuid: {
+            type: DataTypes.STRING(36),
+            allowNull: true,
+            unique: true
+        },
         bingold_user_id: {
             // Identity in the BinGold system (source of truth). Nullable until SSO sync completes.
             type: DataTypes.BIGINT,
@@ -23,6 +31,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         phone: {
             type: DataTypes.STRING(50),
+            allowNull: true
+        },
+        // bcrypt hash for vendor self-service login (SSO register/login). NULL for
+        // users that never set a password. Excluded from queries by default scope.
+        password_hash: {
+            type: DataTypes.STRING(255),
             allowNull: true
         },
         first_name: {
@@ -67,6 +81,8 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true,
         createdAt: 'created_at',
         updatedAt: 'updated_at',
+        // Never leak the password hash; use .unscoped() when it's needed (login).
+        defaultScope: { attributes: { exclude: ['password_hash'] } },
         indexes: [
             { fields: ['bingold_user_id'] },
             { fields: ['email'] },

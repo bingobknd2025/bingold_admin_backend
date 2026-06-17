@@ -18,14 +18,14 @@ router.post("/auth/user-exists",
 
 router.post("/auth/register",
   /*  #swagger.tags = ['BingoPay - Customer Auth']
-      #swagger.summary = 'Register a new customer in BinGold (signup) and create local mapping'
-      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['firstName','lastName','password','confirmPassword','countryId','email','phoneNumber','recaptchaToken'], properties: { firstName: { type:'string', example:'John' }, lastName: { type:'string', example:'Doe' }, password: { type:'string', example:'Passw0rd@123' }, confirmPassword: { type:'string', example:'Passw0rd@123' }, countryId: { type:'string', example:'1' }, email: { type:'string', example:'john@example.com' }, phoneNumber: { type:'string', example:'9876543210' }, type: { type:'integer', example:1 }, signup_as: { type:'integer', example:1 }, referrerCode: { type:'integer', example:123456 }, recaptchaToken: { type:'string', example:'recaptcha-token' } } } } } } */
+      #swagger.summary = 'Register a new customer via BinGold external API (server-to-server, no OTP); stores shared uuid + returns a BinGold token'
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['firstName','lastName','password','countryId','email','phoneNumber'], properties: { firstName: { type:'string', example:'John' }, lastName: { type:'string', example:'Doe' }, password: { type:'string', example:'Passw0rd@123', description:'Strong: 8+ chars incl. upper/lower/number/special' }, countryId: { type:'string', example:'91', description:'Dialing code' }, email: { type:'string', example:'john@example.com' }, phoneNumber: { type:'string', example:'9876543210' } } } } } } */
   customerController.register);
 
 router.post("/auth/login",
   /*  #swagger.tags = ['BingoPay - Customer Auth']
-      #swagger.summary = 'Login via BinGold; returns BinGold tokens + local profile, otpRequired flag'
-      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email','password','recaptchaToken'], properties: { email: { type:'string', example:'john@example.com' }, password: { type:'string', example:'Passw0rd@123' }, recaptchaToken: { type:'string', example:'recaptcha-token' } } } } } } */
+      #swagger.summary = 'Login with the local password set at registration; refreshes status/uuid from BinGold'
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email','password'], properties: { email: { type:'string', example:'john@example.com' }, password: { type:'string', example:'Passw0rd@123' } } } } } } */
   customerController.login);
 
 router.post("/auth/verify-otp",

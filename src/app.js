@@ -87,6 +87,10 @@ app.use("/api/bingold/bingopay", require("./routes/bingopay/customer.routes"));
 app.use("/api/bingold/bingopay/merchant", require("./routes/bingopay/merchant.routes"));
 app.use("/api/bingold/bingopay/pay", require("./routes/bingopay/pay.routes"));
 
+// Partner/SSO-facing vendor surface — authed by x-api-key only (no JWT), so it
+// is mounted before the JWT middleware below.
+app.use("/api/v1/common/vendors", require("./routes/common/vendor-sso.routes"));
+
 app.use("/api/bingold", jwtAuthMiddleware);
 app.use("/api/bingold/admin", require("./routes/admin/admin.routes"));
 

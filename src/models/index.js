@@ -32,6 +32,7 @@ db.MerchantSettlement = require("./merchant_settlement.model")(sequelize, DataTy
 db.KycApplication = require("./kyc_application.model")(sequelize, DataTypes);
 db.SsoSyncLog = require("./sso_sync_log.model")(sequelize, DataTypes);
 db.VendorKycDocument = require("./vendor_kyc_document.model")(sequelize, DataTypes);
+db.VendorSsoToken = require("./vendor_sso_token.model")(sequelize, DataTypes);
 
 // Define associations
 
@@ -156,5 +157,9 @@ db.KycApplication.belongsTo(db.VendorProfile, { foreignKey: 'vendor_id', as: 've
 db.VendorProfile.hasMany(db.VendorKycDocument, { foreignKey: 'vendor_id', as: 'kyc_documents', onDelete: 'CASCADE' });
 db.VendorKycDocument.belongsTo(db.VendorProfile, { foreignKey: 'vendor_id', as: 'vendor' });
 db.VendorKycDocument.belongsTo(db.PdaUser, { foreignKey: 'uploaded_by_admin', as: 'uploader' });
+
+// Vendor SSO QR/handoff tokens
+db.VendorProfile.hasMany(db.VendorSsoToken, { foreignKey: 'vendor_id', as: 'sso_tokens', onDelete: 'CASCADE' });
+db.VendorSsoToken.belongsTo(db.VendorProfile, { foreignKey: 'vendor_id', as: 'vendor' });
 
 module.exports = db;

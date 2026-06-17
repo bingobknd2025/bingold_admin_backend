@@ -17,9 +17,26 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.BIGINT.UNSIGNED,
             allowNull: false
         },
+        // Public, partner-facing identifier used by the SSO API surface. The
+        // integer `id` stays internal; `uuid` is what partners pass in the path.
+        uuid: {
+            type: DataTypes.STRING(36),
+            allowNull: true,
+            unique: true
+        },
         business_name: {
             type: DataTypes.STRING(255),
             allowNull: false
+        },
+        // Storefront identity collected during SSO self-registration.
+        shop_name: {
+            type: DataTypes.STRING(255),
+            allowNull: true
+        },
+        shop_slug: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+            unique: true
         },
         business_type: {
             type: DataTypes.STRING(100),
@@ -43,6 +60,18 @@ module.exports = (sequelize, DataTypes) => {
         },
         website: {
             type: DataTypes.STRING(255),
+            allowNull: true
+        },
+        support_email: {
+            type: DataTypes.STRING(255),
+            allowNull: true
+        },
+        support_phone: {
+            type: DataTypes.STRING(50),
+            allowNull: true
+        },
+        description: {
+            type: DataTypes.TEXT,
             allowNull: true
         },
         annual_turnover: {
@@ -96,6 +125,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         rejection_reason: {
             type: DataTypes.STRING(500),
+            allowNull: true
+        },
+        // Latest KYC/KYB provider decision, as received from the SSO decision
+        // callback: { result, amlStatus, reasons, message, reviewedBy, decidedAt }.
+        kyc_decision: {
+            type: DataTypes.JSON,
             allowNull: true
         }
     }, {

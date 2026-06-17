@@ -24,21 +24,26 @@ function extractProfile(resp) {
 }
 
 async function upsertUser(data = {}) {
-    const { email, phone, first_name, last_name, bingold_user_id, account_type, status, kyc_status, markLogin } = data;
+    const { uuid, email, phone, first_name, last_name, bingold_user_id, password_hash, account_type, status, kyc_status, markLogin } = data;
 
     // Need at least one identifier to attach the record to.
-    if (!email && bingold_user_id == null) return null;
+    if (!uuid && !email && bingold_user_id == null) return null;
 
+    // Match by the shared BinGold uuid first (most authoritative), then numeric
+    // id, then email.
     let user = null;
-    if (bingold_user_id != null) user = await BingopayUser.findOne({ where: { bingold_user_id } });
+    if (uuid) user = await BingopayUser.findOne({ where: { uuid } });
+    if (!user && bingold_user_id != null) user = await BingopayUser.findOne({ where: { bingold_user_id } });
     if (!user && email) user = await BingopayUser.findOne({ where: { email } });
 
     const patch = {};
+    if (uuid) patch.uuid = uuid;
     if (bingold_user_id != null) patch.bingold_user_id = bingold_user_id;
     if (email) patch.email = email;
     if (phone) patch.phone = phone;
     if (first_name) patch.first_name = first_name;
     if (last_name) patch.last_name = last_name;
+    if (password_hash) patch.password_hash = password_hash;
     if (account_type) patch.account_type = account_type;
     if (status) patch.status = status;
     if (kyc_status) patch.kyc_status = kyc_status;
@@ -47,11 +52,13 @@ async function upsertUser(data = {}) {
     if (user) return user.update(patch);
 
     return BingopayUser.create({
+        uuid: uuid || null,
         email: email || null,
         phone: phone || null,
         first_name: first_name || null,
         last_name: last_name || null,
         bingold_user_id: bingold_user_id != null ? bingold_user_id : null,
+        password_hash: password_hash || null,
         account_type: account_type || 'customer',
         status: status || 'pending',
         ...(kyc_status ? { kyc_status } : {}),

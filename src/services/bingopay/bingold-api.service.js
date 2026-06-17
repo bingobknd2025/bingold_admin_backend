@@ -8,17 +8,24 @@ const AUTH_HEADER = process.env.BINGOLD_AUTH_HEADER || 'Authorization';
 const AUTH_SCHEME = process.env.BINGOLD_AUTH_SCHEME ?? 'Bearer'; // set '' for raw token
 const TIMEOUT_MS = parseInt(process.env.BINGOLD_API_TIMEOUT_MS, 10) || 20000;
 
+// Server-to-server "external" API (separate deployment) used for marketplace
+// onboarding: it is authed by an x-api-key (no user token / no OTP) and
+// register_user returns the BinGold UUID + token synchronously. Falls back to
+// the main base URL if a dedicated one isn't configured.
+const EXTERNAL_BASE_URL = (process.env.BINGOLD_EXTERNAL_BASE_URL || BASE_URL).replace(/\/+$/, '');
+const EXTERNAL_API_KEY = process.env.BINGOLD_EXTERNAL_API_KEY || '';
+
 class BingoldApiService {
-    _url(path) {
-        return `${BASE_URL}${PREFIX}${path.startsWith('/') ? path : '/' + path}`;
+    _url(path, baseUrl) {
+        return `${baseUrl || BASE_URL}${PREFIX}${path.startsWith('/') ? path : '/' + path}`;
     }
 
     _authValue(token) {
         return AUTH_SCHEME ? `${AUTH_SCHEME} ${token}` : token;
     }
 
-    async request(method, path, { body, token, query } = {}) {
-        let url = this._url(path);
+    async request(method, path, { body, token, query, apiKey, baseUrl } = {}) {
+        let url = this._url(path, baseUrl);
         if (query && Object.keys(query).length) {
             const qs = new URLSearchParams(
                 Object.entries(query).filter(([, v]) => v !== undefined && v !== null)
@@ -28,6 +35,7 @@ class BingoldApiService {
 
         const headers = { 'Accept': 'application/json' };
         if (body !== undefined) headers['Content-Type'] = 'application/json';
+        if (apiKey) headers['x-api-key'] = apiKey;
         if (token) headers[AUTH_HEADER] = this._authValue(token);
 
         const controller = new AbortController();
@@ -57,6 +65,37 @@ class BingoldApiService {
             throw new ApiError(res.status, Array.isArray(message) ? message.join(', ') : String(message));
         }
         return json;
+    }
+
+    // ─── External (server-to-server, x-api-key) ──────────────────
+    // These power the marketplace onboarding flow and are NOT user/OTP gated.
+    isExternalEnabled() {
+        return Boolean(EXTERNAL_API_KEY);
+    }
+
+    _external(method, path, body) {
+        if (!EXTERNAL_API_KEY) {
+            throw new ApiError(501, 'BinGold external API is not configured (set BINGOLD_EXTERNAL_API_KEY)');
+        }
+        return this.request(method, path, { body, apiKey: EXTERNAL_API_KEY, baseUrl: EXTERNAL_BASE_URL });
+    }
+
+    // Create a BinGold identity. userType: 'USER' | 'VENDOR'. Returns
+    // { data: { id (uuid), email, userRole, clientId, token } } synchronously.
+    registerExternalUser(payload) {
+        return this._external('POST', '/external/register_user', payload);
+    }
+
+    // Full profile + balances for an email (server-to-server).
+    getExternalProfile(email) {
+        return this._external('POST', '/external/get_profile', { email });
+    }
+
+    // Credit/debit a user's marketplace balance. operation: 'add' | 'deduct'.
+    marketplaceBalanceOperation({ email, amount, operation, reference, description }) {
+        return this._external('POST', '/external/marketplace_balance_operation', {
+            email, amount, operation, reference, description
+        });
     }
 
     // ─── Auth ────────────────────────────────────────────────────
@@ -146,4 +185,4 @@ class BingoldApiService {
 }
 
 module.exports = new BingoldApiService();
-module.exports.config = { BASE_URL, PREFIX, AUTH_HEADER, AUTH_SCHEME };
+module.exports.config = { BASE_URL, PREFIX, AUTH_HEADER, AUTH_SCHEME, EXTERNAL_BASE_URL, EXTERNAL_ENABLED: Boolean(EXTERNAL_API_KEY) };

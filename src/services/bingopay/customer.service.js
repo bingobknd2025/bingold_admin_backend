@@ -8,6 +8,7 @@ const { BingopayUser, SsoSyncLog } = db;
 const ApiError = require('../../utils/apiError.util');
 const BingoldApi = require('./bingold-api.service');
 const UserSync = require('./user-sync.service');
+const { hashPassword, comparePassword } = require('../../utils/hash.util');
 
 const SECRET_KEYS = ['password', 'confirmPassword', 'pin', 'confirmPin', 'otp', 'tOtp',
     'token', 'access_token', 'accessToken', 'refresh_token', 'refreshToken',
@@ -63,33 +64,34 @@ class CustomerService {
         return UserSync.upsertUser(data);
     }
 
-    // Step 1 of the BingoPay entry flow: does this email already have a BinGold
-    // account? Also reports whether we have a local mapping yet.
+    // Step 1 of the entry flow: does this email already have a BinGold account?
+    // Uses the external get_profile (server-to-server); a 2xx with a profile id
+    // means the user exists. Syncs the shared uuid into the local mapping.
     async checkUser(email) {
         if (!email) throw new ApiError(400, 'email is required');
 
         let exists = false;
-        let upstream;
+        let upstream = null;
         try {
-            upstream = await BingoldApi.userExists(email);
-            // Endpoint returns truthy/exists flag in an undocumented shape; treat
-            // any successful 2xx with an explicit false as "does not exist".
-            const d = upstream && (upstream.data ?? upstream);
-            exists = typeof d === 'boolean' ? d
-                : (d && (d.exists ?? d.userExists ?? d.isExist ?? d.status)) ?? true;
+            upstream = await BingoldApi.getExternalProfile(email);
+            const p = (upstream && upstream.data && upstream.data.profile) || null;
+            exists = Boolean(p && p.id);
             await this._log('user_exists', { email }, upstream, 'success');
         } catch (err) {
+            // get_profile errors for unknown emails — treat as "does not exist".
+            exists = false;
             await this._log('user_exists', { email }, { error: err.message }, 'failed');
-            throw err;
         }
 
-        // If the user exists on BinGold, make sure we have a local DB entry for
-        // them; otherwise just report whatever local row we may already have.
         let local;
         if (exists) {
+            const p = upstream.data.profile;
             local = await this._upsertLocalUser({
+                uuid: String(p.id),
                 email,
-                bingold_user_id: extractUserId(upstream),
+                phone: p.phoneNumber || undefined,
+                first_name: p.firstName || undefined,
+                last_name: p.lastName || undefined,
                 account_type: 'customer',
                 status: 'active'
             });
@@ -100,89 +102,78 @@ class CustomerService {
         return { exists: Boolean(exists), hasLocalProfile: Boolean(local), profile: local, raw: upstream };
     }
 
-    // New-user flow: register the customer in BinGold, then create the local
-    // mapping in 'pending' state (activated after OTP / login).
+    // New-user flow: create the identity on BinGold via the external API
+    // (server-to-server, no OTP) and mirror it locally with the SAME uuid. The
+    // returned token can be used straight away for wallet calls.
     async register(payload) {
-        const required = ['firstName', 'lastName', 'password', 'confirmPassword', 'countryId', 'email', 'phoneNumber'];
+        const required = ['firstName', 'lastName', 'password', 'countryId', 'email', 'phoneNumber'];
         for (const f of required) if (!payload[f]) throw new ApiError(400, `${f} is required`);
 
         const body = {
+            email: payload.email,
+            password: payload.password,
             firstName: payload.firstName,
             lastName: payload.lastName,
-            password: payload.password,
-            confirmPassword: payload.confirmPassword,
-            countryId: payload.countryId,
-            email: payload.email,
+            countryId: String(payload.countryId),
             phoneNumber: payload.phoneNumber,
-            type: payload.type ?? 1,
-            signup_as: payload.signup_as ?? 1,
-            recaptchaToken: payload.recaptchaToken,
-            ...(payload.referrerCode ? { referrerCode: payload.referrerCode } : {})
+            userType: 'USER'
         };
 
         let upstream;
         try {
-            upstream = await BingoldApi.signup(body);
+            upstream = await BingoldApi.registerExternalUser(body);
         } catch (err) {
             await this._log('signup', body, { error: err.message }, 'failed');
             throw err;
         }
 
+        const d = (upstream && upstream.data) || {};
+        const bingoldUuid = d.id ? String(d.id) : null;
+        const password_hash = await hashPassword(String(payload.password));
+
         const local = await this._upsertLocalUser({
+            uuid: bingoldUuid || undefined,
             email: payload.email,
             phone: payload.phoneNumber,
             first_name: payload.firstName,
             last_name: payload.lastName,
-            bingold_user_id: extractUserId(upstream),
+            password_hash,
             account_type: 'customer',
-            status: 'pending'
+            status: 'active'
         });
 
-        await this._log('signup', body, upstream, 'success', {
-            bingopay_user_id: local && local.id,
-            bingold_user_id: local && local.bingold_user_id
-        });
+        await this._log('signup', body, upstream, 'success', { bingopay_user_id: local && local.id });
 
-        return { bingold: upstream, profile: local };
+        return { bingold: upstream, profile: local, token: d.token || null };
     }
 
-    // Existing-user flow: authenticate against BinGold, sync local mapping to
-    // 'active', and return the BinGold tokens for the client to use on wallet calls.
+    // Existing-user flow: authenticate against the local password set at
+    // registration, refresh status/uuid from BinGold's external get_profile.
     async login(payload) {
         if (!payload.email || !payload.password) throw new ApiError(400, 'email and password are required');
 
-        const body = {
-            email: payload.email,
-            password: payload.password,
-            recaptchaToken: payload.recaptchaToken
-        };
-
-        let upstream;
-        try {
-            upstream = await BingoldApi.login(body);
-        } catch (err) {
-            await this._log('login', body, { error: err.message }, 'failed');
-            throw err;
+        const user = await BingopayUser.unscoped().findOne({ where: { email: payload.email } });
+        if (!user || !user.password_hash) {
+            await this._log('login', { email: payload.email }, { error: 'invalid credentials' }, 'failed');
+            throw new ApiError(401, 'Invalid credentials');
+        }
+        if (!await comparePassword(String(payload.password), user.password_hash)) {
+            await this._log('login', { email: payload.email }, { error: 'invalid credentials' }, 'failed');
+            throw new ApiError(401, 'Invalid credentials');
         }
 
-        const bingold_user_id = extractUserId(upstream);
-        const token = extractToken(upstream);
+        // Best-effort refresh of status + shared uuid from BinGold.
+        let upstream = null;
+        try {
+            upstream = await BingoldApi.getExternalProfile(payload.email);
+            const p = (upstream && upstream.data && upstream.data.profile) || {};
+            if (p.id && user.uuid !== String(p.id)) await user.update({ uuid: String(p.id) });
+        } catch (_) { /* best-effort */ }
 
-        // Only mark 'active' once we have a session; OTP-gated logins stay pending.
-        const local = await this._upsertLocalUser({
-            email: payload.email,
-            bingold_user_id,
-            account_type: 'customer',
-            status: token ? 'active' : 'pending',
-            markLogin: Boolean(token)
-        });
+        await user.update({ status: 'active', last_login_at: new Date() });
+        await this._log('login', { email: payload.email }, upstream, 'success', { bingopay_user_id: user.id });
 
-        await this._log('login', body, upstream, 'success', {
-            bingopay_user_id: local && local.id,
-            bingold_user_id: local && local.bingold_user_id
-        });
-
-        return { bingold: upstream, profile: local, otpRequired: !token };
+        return { profile: user, bingold: upstream };
     }
 
     async verifyOtp(payload) {
