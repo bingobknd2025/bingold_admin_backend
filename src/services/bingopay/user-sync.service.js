@@ -5,8 +5,51 @@
 // the bingopay_users mapping table always reflects the latest known data.
 // Matching is by bingold_user_id first, then email.
 const db = require('../../models');
-const { BingopayUser } = db;
+const { BingopayUser, VendorProfile } = db;
 const BingoldApi = require('./bingold-api.service');
+
+// Normalize BinGold's UPPER-case status/kyc onto our enums.
+function mapStatus(s) {
+    const k = String(s || '').toLowerCase();
+    return ['active', 'blocked', 'suspended', 'pending'].includes(k) ? k : undefined;
+}
+function mapKyc(s) {
+    const k = String(s || '').toLowerCase();
+    if (['approved', 'completed', 'green'].includes(k)) return 'approved';
+    if (['rejected', 'red'].includes(k)) return 'rejected';
+    if (['in_progress', 'processing'].includes(k)) return 'in_progress';
+    if (['pending', 'init'].includes(k)) return 'pending';
+    return undefined;
+}
+
+// get_profile shapes vary across BinGold deployments: the profile may be under
+// `data.profile` or directly under `data`, and names under `userDetail` or flat.
+// This pulls the bits we cache into a normalized object.
+function parseExternalProfile(resp) {
+    const data = (resp && resp.data) || {};
+    const p = data.profile || data;
+    const detail = p.userDetail || p;
+    const balances = Array.isArray(data.balances) ? data.balances
+        : (Array.isArray(p.balances) ? p.balances : []);
+
+    const walletAddresses = {};
+    for (const b of balances) {
+        if (b && b.coin && b.address) walletAddresses[String(b.coin).toLowerCase()] = b.address;
+    }
+
+    return {
+        uuid: p.id ? String(p.id) : null,
+        email: p.email || null,
+        phone: p.phoneNumber || p.phone || null,
+        first_name: detail.firstName || detail.first_name || null,
+        last_name: detail.lastName || detail.last_name || null,
+        status: mapStatus(p.status),
+        kyc_status: mapKyc(p.kycStatus || p.kyc_status),
+        walletAddresses,
+        balances,
+        snapshot: data
+    };
+}
 
 // Pull identity fields out of a BinGold /users/profile response (shape is
 // undocumented, so we probe the common keys).
@@ -95,4 +138,65 @@ async function resolveFromToken(token, extra = {}) {
     return { user, info, raw: profileResp };
 }
 
-module.exports = { upsertUser, resolveFromToken, extractProfile };
+// Fetch the live BinGold profile for `email`, cache it locally, and return the
+// merged view. Called whenever an admin/partner VIEWS or EDITS a user/vendor so
+// both platforms show the same data. Updates the bingopay_users row and, if the
+// user is a vendor, the vendor_profiles row too (same wallet_addresses snapshot).
+async function syncFromExternalProfile(email) {
+    if (!email) {
+        const err = new Error('email is required to sync profile');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const resp = await BingoldApi.getExternalProfile(email);
+    const info = parseExternalProfile(resp);
+    const now = new Date();
+
+    // Locate the local user (by shared uuid first, then email).
+    let user = null;
+    if (info.uuid) user = await BingopayUser.findOne({ where: { uuid: info.uuid } });
+    if (!user) user = await BingopayUser.findOne({ where: { email } });
+
+    const userPatch = {
+        ...(info.uuid ? { uuid: info.uuid } : {}),
+        ...(info.phone ? { phone: info.phone } : {}),
+        ...(info.first_name ? { first_name: info.first_name } : {}),
+        ...(info.last_name ? { last_name: info.last_name } : {}),
+        ...(info.status ? { status: info.status } : {}),
+        ...(info.kyc_status ? { kyc_status: info.kyc_status } : {}),
+        wallet_addresses: info.walletAddresses,
+        bingold_profile: info.snapshot,
+        profile_synced_at: now
+    };
+
+    if (user) {
+        await user.update(userPatch);
+    } else {
+        user = await BingopayUser.create({
+            email, account_type: 'customer', status: info.status || 'active', ...userPatch
+        });
+    }
+
+    // Mirror onto the vendor profile (if this user is a vendor).
+    let vendor = await VendorProfile.findOne({ where: { user_id: user.id } });
+    if (vendor) {
+        await vendor.update({
+            ...(info.uuid && vendor.uuid !== info.uuid ? { uuid: info.uuid } : {}),
+            wallet_addresses: info.walletAddresses,
+            bingold_profile: info.snapshot,
+            profile_synced_at: now
+        });
+    }
+
+    return {
+        user,
+        vendor,
+        walletAddresses: info.walletAddresses,
+        balances: info.balances,
+        syncedAt: now,
+        raw: resp
+    };
+}
+
+module.exports = { upsertUser, resolveFromToken, extractProfile, parseExternalProfile, syncFromExternalProfile };

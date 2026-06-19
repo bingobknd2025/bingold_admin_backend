@@ -53,6 +53,14 @@ class VendorSsoController {
         } catch (error) { next(error); }
     }
 
+    // 6b. POST /:uuid/sso/receive-qr
+    async receiveQr(req, res, next) {
+        try {
+            const data = await VendorSsoService.receiveQr(req.params.uuid, req.body || {});
+            res.json({ success: true, message: 'Receive QR generated', data });
+        } catch (error) { next(error); }
+    }
+
     // 7. POST /:uuid/sso/kyc
     async submitKyc(req, res, next) {
         try {

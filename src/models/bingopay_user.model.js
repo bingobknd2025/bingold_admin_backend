@@ -75,6 +75,20 @@ module.exports = (sequelize, DataTypes) => {
         last_login_at: {
             type: DataTypes.DATE,
             allowNull: true
+        },
+        // coin -> wallet address map, cached from BinGold get_profile balances[].
+        wallet_addresses: {
+            type: DataTypes.JSON,
+            allowNull: true
+        },
+        // Full last get_profile snapshot from BinGold (source of displayed data).
+        bingold_profile: {
+            type: DataTypes.JSON,
+            allowNull: true
+        },
+        profile_synced_at: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     }, {
         tableName: 'bingopay_users',

@@ -70,36 +70,24 @@ class CustomerService {
     async checkUser(email) {
         if (!email) throw new ApiError(400, 'email is required');
 
-        let exists = false;
-        let upstream = null;
         try {
-            upstream = await BingoldApi.getExternalProfile(email);
-            const p = (upstream && upstream.data && upstream.data.profile) || null;
-            exists = Boolean(p && p.id);
-            await this._log('user_exists', { email }, upstream, 'success');
+            // Fetches the live profile AND caches it locally (status, kyc,
+            // wallet addresses, full snapshot) — same data on both platforms.
+            const synced = await UserSync.syncFromExternalProfile(email);
+            await this._log('user_exists', { email }, synced.raw, 'success', { bingopay_user_id: synced.user && synced.user.id });
+            return {
+                exists: true,
+                hasLocalProfile: true,
+                profile: synced.user,
+                walletAddresses: synced.walletAddresses,
+                raw: synced.raw
+            };
         } catch (err) {
             // get_profile errors for unknown emails — treat as "does not exist".
-            exists = false;
             await this._log('user_exists', { email }, { error: err.message }, 'failed');
+            const local = await BingopayUser.findOne({ where: { email } });
+            return { exists: false, hasLocalProfile: Boolean(local), profile: local, raw: null };
         }
-
-        let local;
-        if (exists) {
-            const p = upstream.data.profile;
-            local = await this._upsertLocalUser({
-                uuid: String(p.id),
-                email,
-                phone: p.phoneNumber || undefined,
-                first_name: p.firstName || undefined,
-                last_name: p.lastName || undefined,
-                account_type: 'customer',
-                status: 'active'
-            });
-        } else {
-            local = await BingopayUser.findOne({ where: { email } });
-        }
-
-        return { exists: Boolean(exists), hasLocalProfile: Boolean(local), profile: local, raw: upstream };
     }
 
     // New-user flow: create the identity on BinGold via the external API

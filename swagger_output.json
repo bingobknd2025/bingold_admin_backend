@@ -2571,6 +2571,57 @@
         }
       }
     },
+    "/api/v1/common/vendors/{uuid}/sso/receive-qr": {
+      "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Sync the vendor's BinGold profile and return a receive-QR of their wallet address for the chosen coin (defaults to settle_coin).",
+        "description": "",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coin": {
+                    "type": "string",
+                    "description": "e.g. USDT, ETH, BIGOD — defaults to vendor settle_coin"
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                }
+              },
+              "example": {
+                "coin": "USDT"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/common/vendors/{uuid}/sso/kyc": {
       "post": {
         "tags": [
@@ -4945,6 +4996,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/create": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Onboard a vendor (admin). Provide user_id OR email/phone + business details.",
         "description": "",
         "parameters": [
           {
@@ -4965,11 +5020,61 @@
           "403": {
             "description": "Forbidden"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "business_name"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "business_name": {
+                    "type": "string",
+                    "example": "ABC Store"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "gst_number": {
+                    "type": "string"
+                  },
+                  "pan_number": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "annual_turnover": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
     "/api/bingold/admin/bingopay/vendors/list": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "List vendors (paginated, filterable)",
         "description": "",
         "parameters": [
           {
@@ -4998,13 +5103,19 @@
                 "type": "object",
                 "properties": {
                   "page": {
-                    "example": "any"
+                    "type": "integer"
                   },
                   "limit": {
-                    "example": "any"
+                    "type": "integer"
                   },
-                  "filters": {
-                    "example": "any"
+                  "search": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "kyc_status": {
+                    "type": "string"
                   }
                 }
               }
@@ -5015,6 +5126,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/view": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Get one vendor",
         "description": "",
         "parameters": [
           {
@@ -5037,13 +5152,17 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
                   }
                 }
               }
@@ -5054,6 +5173,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/update": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Update vendor business fields",
         "description": "",
         "parameters": [
           {
@@ -5076,13 +5199,35 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
+                  },
+                  "business_name": {
+                    "type": "string"
+                  },
+                  "business_type": {
+                    "type": "string"
+                  },
+                  "gst_number": {
+                    "type": "string"
+                  },
+                  "pan_number": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
                   }
                 }
               }
@@ -5093,6 +5238,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/approve": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Approve vendor (kyc_status=approved, status=active)",
         "description": "",
         "parameters": [
           {
@@ -5115,13 +5264,17 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
                   }
                 }
               }
@@ -5132,6 +5285,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/reject": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Reject vendor",
         "description": "",
         "parameters": [
           {
@@ -5154,16 +5311,20 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
                   },
                   "reason": {
-                    "example": "any"
+                    "type": "string"
                   }
                 }
               }
@@ -5174,6 +5335,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/change-status": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Set vendor status (pending|active|suspended|rejected)",
         "description": "",
         "parameters": [
           {
@@ -5196,16 +5361,21 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id",
+                  "status"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
                   },
                   "status": {
-                    "example": "any"
+                    "type": "string"
                   }
                 }
               }
@@ -5216,6 +5386,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/initiate-kyc": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Start Sumsub (online) KYC; returns applicant_id + WebSDK access_token",
         "description": "",
         "parameters": [
           {
@@ -5238,13 +5412,17 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
-                    "example": "any"
+                    "type": "integer"
                   }
                 }
               }
@@ -5255,6 +5433,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/kyc/submit": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Submit offline KYC documents for a vendor (multipart). vendor_id as form field.",
         "description": "",
         "parameters": [
           {
@@ -5278,15 +5460,47 @@
         },
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "vendor_id"
+                ],
                 "properties": {
                   "vendor_id": {
-                    "example": "any"
+                    "type": "integer"
                   },
-                  "id": {
-                    "example": "any"
+                  "certificate_of_incorporation": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "gst_certificate": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "pan_card": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "director_id": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "address_proof": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "bank_statement": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "other": {
+                    "type": "string",
+                    "format": "binary"
                   }
                 }
               }
@@ -5297,6 +5511,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/kyc/documents": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "List offline KYC documents for a vendor",
         "description": "",
         "parameters": [
           {
@@ -5319,16 +5537,17 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "vendor_id"
+                ],
                 "properties": {
                   "vendor_id": {
-                    "example": "any"
-                  },
-                  "id": {
-                    "example": "any"
+                    "type": "integer"
                   }
                 }
               }
@@ -5339,6 +5558,10 @@
     },
     "/api/bingold/admin/bingopay/vendors/kyc/review-document": {
       "post": {
+        "tags": [
+          "BingoPay Admin - Vendors"
+        ],
+        "summary": "Approve/reject a single KYC document",
         "description": "",
         "parameters": [
           {
@@ -5361,19 +5584,29 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "document_id",
+                  "status"
+                ],
                 "properties": {
                   "document_id": {
-                    "example": "any"
+                    "type": "integer"
                   },
                   "status": {
-                    "example": "any"
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected",
+                      "pending"
+                    ]
                   },
                   "note": {
-                    "example": "any"
+                    "type": "string"
                   }
                 }
               }

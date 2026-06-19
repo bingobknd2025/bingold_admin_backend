@@ -132,6 +132,21 @@ module.exports = (sequelize, DataTypes) => {
         kyc_decision: {
             type: DataTypes.JSON,
             allowNull: true
+        },
+        // coin -> wallet address map, cached from the vendor's BinGold profile
+        // (balances[]). Used to render the receive-QR for the chosen settle coin.
+        wallet_addresses: {
+            type: DataTypes.JSON,
+            allowNull: true
+        },
+        // Full last get_profile snapshot from BinGold.
+        bingold_profile: {
+            type: DataTypes.JSON,
+            allowNull: true
+        },
+        profile_synced_at: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     }, {
         tableName: 'vendor_profiles',

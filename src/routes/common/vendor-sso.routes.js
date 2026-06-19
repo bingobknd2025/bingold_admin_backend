@@ -44,6 +44,13 @@ router.post("/:uuid/sso/qr",
       #swagger.requestBody = { content: { "application/json": { schema: { type:'object', properties: { ttlSeconds:{type:'integer'}, redirectUrl:{type:'string'} } }, example: { ttlSeconds:300, redirectUrl:'https://partner-app.com/vendor-sso/verify' } } } } */
   ctrl.generateQr);
 
+router.post("/:uuid/sso/receive-qr",
+  /*  #swagger.tags = ['Vendor SSO']
+      #swagger.summary = "Sync the vendor's BinGold profile and return a receive-QR of their wallet address for the chosen coin (defaults to settle_coin)."
+      #swagger.parameters['uuid'] = { in:'path', required:true, type:'string' }
+      #swagger.requestBody = { content: { "application/json": { schema: { type:'object', properties: { coin:{type:'string', description:'e.g. USDT, ETH, BIGOD — defaults to vendor settle_coin'}, amount:{type:'number'} } }, example: { coin:'USDT' } } } } */
+  ctrl.receiveQr);
+
 router.post("/:uuid/sso/kyc",
   /*  #swagger.tags = ['Vendor SSO']
       #swagger.summary = 'Submit KYC/KYB documents (by URL) for a vendor.'

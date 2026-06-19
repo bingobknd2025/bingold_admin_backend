@@ -21,6 +21,7 @@ const { BingopayUser, VendorProfile, VendorKycDocument, VendorSsoToken, SsoSyncL
 const ApiError = require('../../utils/apiError.util');
 const { hashPassword, comparePassword } = require('../../utils/hash.util');
 const BingoldApi = require('./bingold-api.service');
+const UserSync = require('./user-sync.service');
 
 const MERCHANT_CODE_PREFIX = 'MER';
 const DEFAULT_TTL_SECONDS = 300;
@@ -408,11 +409,98 @@ class VendorSsoService {
             if (!vendor) throw new ApiError(404, 'Vendor not found');
             ctx.userId = vendor.user_id;
 
+            const email = vendor.user ? vendor.user.email : null;
+            const phone = vendor.user ? vendor.user.phone : null;
+
+            // View = fetch fresh BinGold profile and sync it into our DB so both
+            // platforms show the same data (status, KYC, wallet addresses).
+            let walletAddresses = this._asObject(vendor.wallet_addresses);
+            let balances = null;
+            let profileSyncedAt = vendor.profile_synced_at || null;
+            try {
+                if (email) {
+                    const synced = await UserSync.syncFromExternalProfile(email);
+                    if (synced.vendor) vendor = synced.vendor;          // freshly-updated row
+                    walletAddresses = synced.walletAddresses;
+                    balances = synced.balances;
+                    profileSyncedAt = synced.syncedAt;
+                }
+            } catch (_) { /* fall back to the cached local copy on any sync error */ }
+
             return {
                 ...this.vendorSummary(vendor),
-                email: vendor.user ? vendor.user.email : null,
-                phone: vendor.user ? vendor.user.phone : null,
-                kycDecision: vendor.kyc_decision || null
+                email,
+                phone,
+                kycDecision: vendor.kyc_decision || null,
+                walletAddresses,
+                balances,
+                profileSyncedAt
+            };
+        });
+    }
+
+    // Normalize a coin label to the key used in BinGold balances[]. The settle
+    // coin 'BIGOD' is held under the 'token' wallet.
+    _coinKey(coin) {
+        const c = String(coin || '').trim().toLowerCase();
+        return c === 'bigod' ? 'token' : c;
+    }
+
+    // JSON columns can come back as a string on some MySQL/MariaDB setups
+    // (Sequelize doesn't always auto-parse) — coerce to a plain object.
+    _asObject(v) {
+        if (!v) return {};
+        if (typeof v === 'string') { try { return JSON.parse(v) || {}; } catch (_) { return {}; } }
+        return v;
+    }
+
+    // ─── 6b. Receive QR (vendor's wallet address for a coin) ──────
+    // Syncs the vendor's BinGold profile, picks the wallet address for the chosen
+    // coin (defaults to the vendor's settle_coin), and returns a QR of it so a
+    // customer can scan and pay into that address.
+    async receiveQr(uuid, { coin, amount } = {}) {
+        return this._audit('sso_receive_qr', { uuid, coin }, async (ctx) => {
+            let vendor = await this.resolveVendorByUuid(uuid, {
+                include: [{ model: BingopayUser, as: 'user', attributes: ['id', 'email'] }]
+            });
+            ctx.userId = vendor.user_id;
+
+            // Refresh wallet addresses from BinGold (best-effort; fall back to cache).
+            const email = vendor.user ? vendor.user.email : null;
+            let syncedAt = vendor.profile_synced_at || null;
+            try {
+                if (email) {
+                    const synced = await UserSync.syncFromExternalProfile(email);
+                    if (synced.vendor) vendor = synced.vendor;
+                    syncedAt = synced.syncedAt;
+                }
+            } catch (_) { /* use cached wallet_addresses */ }
+
+            const requestedCoin = coin || vendor.settle_coin || 'BIGOD';
+            const coinKey = this._coinKey(requestedCoin);
+            const addresses = this._asObject(vendor.wallet_addresses);
+            const address = addresses[coinKey];
+
+            if (!address) {
+                const available = Object.keys(addresses).filter((k) => addresses[k]);
+                throw new ApiError(409,
+                    `No BinGold wallet address for '${requestedCoin}' yet. Available: ${available.join(', ') || 'none'}`);
+            }
+
+            let qr = null;
+            try {
+                const QRCode = require('qrcode');
+                qr = await QRCode.toDataURL(address);
+            } catch (_) { /* image generation is best-effort */ }
+
+            return {
+                vendorUuid: vendor.uuid,
+                coin: requestedCoin,
+                coinKey,
+                address,
+                amount: amount || null,
+                qr,
+                profileSyncedAt: syncedAt
             };
         });
     }
