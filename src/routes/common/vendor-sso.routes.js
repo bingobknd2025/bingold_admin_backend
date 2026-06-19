@@ -44,6 +44,12 @@ router.post("/:uuid/sso/qr",
       #swagger.requestBody = { content: { "application/json": { schema: { type:'object', properties: { ttlSeconds:{type:'integer'}, redirectUrl:{type:'string'} } }, example: { ttlSeconds:300, redirectUrl:'https://partner-app.com/vendor-sso/verify' } } } } */
   ctrl.generateQr);
 
+router.get("/:uuid/sso/profile",
+  /*  #swagger.tags = ['Vendor SSO']
+      #swagger.summary = "Full vendor profile: syncs the vendor's BinGold profile (external get_profile) into the DB and returns merged data + wallet addresses + balances."
+      #swagger.parameters['uuid'] = { in:'path', required:true, type:'string' } */
+  ctrl.profile);
+
 router.post("/:uuid/sso/receive-qr",
   /*  #swagger.tags = ['Vendor SSO']
       #swagger.summary = "Sync the vendor's BinGold profile and return a receive-QR of their wallet address for the chosen coin (defaults to settle_coin)."

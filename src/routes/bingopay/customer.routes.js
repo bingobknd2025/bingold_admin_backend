@@ -7,6 +7,7 @@
 const router = require("express").Router();
 const customerController = require("../../controllers/bingopay/customer.controller");
 const walletController = require("../../controllers/bingopay/wallet.controller");
+const marketplaceController = require("../../controllers/bingopay/marketplace.controller");
 const bingoldAuth = require("../../middleware/bingoldAuth.middleware");
 
 // ─── Auth / onboarding (SSO with BinGold) ────────────────────────
@@ -27,6 +28,31 @@ router.post("/auth/login",
       #swagger.summary = 'Login with the local password set at registration; refreshes status/uuid from BinGold'
       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email','password'], properties: { email: { type:'string', example:'john@example.com' }, password: { type:'string', example:'Passw0rd@123' } } } } } } */
   customerController.login);
+
+// ─── Marketplace order money-movement (server-to-server, x-api-key) ──
+router.post("/marketplace/order-pay",
+  /*  #swagger.tags = ['BingoPay - Marketplace']
+      #swagger.summary = 'Settle a marketplace order: debit customer BIGOD, credit vendor (amount - commission). Idempotent on reference (order id).'
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['customerEmail','amount'], properties: { customerEmail: { type:'string', example:'buyer@example.com' }, vendorUuid: { type:'string' }, vendorEmail: { type:'string', example:'owner@acme.com' }, amount: { type:'number', example:100 }, commission: { type:'number', example:10 }, reference: { type:'string', example:'ORDER-1001' }, description: { type:'string' } } } } } } */
+  marketplaceController.orderPay);
+
+router.post("/marketplace/order-refund",
+  /*  #swagger.tags = ['BingoPay - Marketplace']
+      #swagger.summary = 'Refund a marketplace order: claw back from vendor, credit customer.'
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['customerEmail','amount'], properties: { customerEmail: { type:'string' }, vendorUuid: { type:'string' }, vendorEmail: { type:'string' }, amount: { type:'number', example:100 }, commission: { type:'number', example:10 }, reference: { type:'string', example:'ORDER-1001' }, description: { type:'string' } } } } } } */
+  marketplaceController.orderRefund);
+
+router.post("/balance/operation",
+  /*  #swagger.tags = ['BingoPay - Marketplace']
+      #swagger.summary = "Add or deduct a BinGold user's marketplace (BIGOD) balance via the external API; returns the new BIGOD balance"
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email','amount','operation'], properties: { email: { type:'string', example:'john@example.com' }, amount: { type:'number', example:25.5 }, operation: { type:'string', enum:['add','deduct'] }, reference: { type:'string', example:'MKT-ORDER-0001' }, description: { type:'string', example:'Marketplace purchase settlement' } } } } } } */
+  customerController.balanceOperation);
+
+router.post("/auth/profile",
+  /*  #swagger.tags = ['BingoPay - Customer Auth']
+      #swagger.summary = 'Full customer profile via BinGold external get_profile; syncs locally and returns wallet addresses + balances'
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email'], properties: { email: { type:'string', example:'john@example.com' } } } } } } */
+  customerController.profile);
 
 router.post("/auth/verify-otp",
   /*  #swagger.tags = ['BingoPay - Customer Auth']

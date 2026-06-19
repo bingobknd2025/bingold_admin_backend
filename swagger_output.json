@@ -25,6 +25,10 @@
       "description": "SSO onboarding/login proxied to BinGold"
     },
     {
+      "name": "BingoPay - Marketplace",
+      "description": "Server-to-server BIGOD money movement for the marketplace: order pay/refund + balance add/deduct (x-api-key)"
+    },
+    {
       "name": "BingoPay - Wallet",
       "description": "Balance / ledger / withdraw (forwards the BinGold token)"
     },
@@ -1154,6 +1158,227 @@
                   "password": {
                     "type": "string",
                     "example": "Passw0rd@123"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/marketplace/order-pay": {
+      "post": {
+        "tags": [
+          "BingoPay - Marketplace"
+        ],
+        "summary": "Settle a marketplace order: debit customer BIGOD, credit vendor (amount - commission). Idempotent on reference (order id).",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerEmail",
+                  "amount"
+                ],
+                "properties": {
+                  "customerEmail": {
+                    "type": "string",
+                    "example": "buyer@example.com"
+                  },
+                  "vendorUuid": {
+                    "type": "string"
+                  },
+                  "vendorEmail": {
+                    "type": "string",
+                    "example": "owner@acme.com"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "example": 100
+                  },
+                  "commission": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "reference": {
+                    "type": "string",
+                    "example": "ORDER-1001"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/marketplace/order-refund": {
+      "post": {
+        "tags": [
+          "BingoPay - Marketplace"
+        ],
+        "summary": "Refund a marketplace order: claw back from vendor, credit customer.",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerEmail",
+                  "amount"
+                ],
+                "properties": {
+                  "customerEmail": {
+                    "type": "string"
+                  },
+                  "vendorUuid": {
+                    "type": "string"
+                  },
+                  "vendorEmail": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "example": 100
+                  },
+                  "commission": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "reference": {
+                    "type": "string",
+                    "example": "ORDER-1001"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/balance/operation": {
+      "post": {
+        "tags": [
+          "BingoPay - Marketplace"
+        ],
+        "summary": "Add or deduct a BinGold user's marketplace (BIGOD) balance via the external API; returns the new BIGOD balance",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "amount",
+                  "operation"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "example": 25.5
+                  },
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "deduct"
+                    ]
+                  },
+                  "reference": {
+                    "type": "string",
+                    "example": "MKT-ORDER-0001"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Marketplace purchase settlement"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bingold/bingopay/auth/profile": {
+      "post": {
+        "tags": [
+          "BingoPay - Customer Auth"
+        ],
+        "summary": "Full customer profile via BinGold external get_profile; syncs locally and returns wallet addresses + balances",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
                   }
                 }
               }
@@ -2567,6 +2792,36 @@
                 "redirectUrl": "https://partner-app.com/vendor-sso/verify"
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/common/vendors/{uuid}/sso/profile": {
+      "get": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Full vendor profile: syncs the vendor's BinGold profile (external get_profile) into the DB and returns merged data + wallet addresses + balances.",
+        "description": "",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }

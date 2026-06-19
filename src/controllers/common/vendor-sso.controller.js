@@ -53,6 +53,14 @@ class VendorSsoController {
         } catch (error) { next(error); }
     }
 
+    // 6c. GET /:uuid/sso/profile
+    async profile(req, res, next) {
+        try {
+            const data = await VendorSsoService.getProfile(req.params.uuid);
+            res.json({ success: true, message: 'Vendor profile', data });
+        } catch (error) { next(error); }
+    }
+
     // 6b. POST /:uuid/sso/receive-qr
     async receiveQr(req, res, next) {
         try {

@@ -33,9 +33,17 @@ function parseExternalProfile(resp) {
         : (Array.isArray(p.balances) ? p.balances : []);
 
     const walletAddresses = {};
+    let tokenBalance = 0;
     for (const b of balances) {
-        if (b && b.coin && b.address) walletAddresses[String(b.coin).toLowerCase()] = b.address;
+        if (!b || !b.coin) continue;
+        const coin = String(b.coin).toLowerCase();
+        if (b.address) walletAddresses[coin] = b.address;
+        // BIGOD is held under the 'token' coin (it has no on-chain address).
+        if (coin === 'token') tokenBalance = Number(b.total_balance ?? b.balance ?? 0) || 0;
     }
+    // BIGOD = the marketplace spending balance.
+    const bigoldBalance = Number(data.bigoldBalance ?? p.bigoldBalance ?? tokenBalance) || 0;
+    const usdtBalance = Number(data.usdtBalance ?? p.usdtBalance ?? 0) || 0;
 
     return {
         uuid: p.id ? String(p.id) : null,
@@ -47,6 +55,8 @@ function parseExternalProfile(resp) {
         kyc_status: mapKyc(p.kycStatus || p.kyc_status),
         walletAddresses,
         balances,
+        bigoldBalance,
+        usdtBalance,
         snapshot: data
     };
 }
@@ -194,6 +204,8 @@ async function syncFromExternalProfile(email) {
         vendor,
         walletAddresses: info.walletAddresses,
         balances: info.balances,
+        bigoldBalance: info.bigoldBalance,
+        usdtBalance: info.usdtBalance,
         syncedAt: now,
         raw: resp
     };

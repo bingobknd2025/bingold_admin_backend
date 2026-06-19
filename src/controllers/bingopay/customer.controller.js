@@ -29,6 +29,22 @@ class CustomerController {
         } catch (error) { next(error); }
     }
 
+    async profile(req, res, next) {
+        try {
+            const { email } = req.body;
+            if (!email) throw new ApiError(400, 'email is required');
+            const result = await CustomerService.getProfile(email);
+            res.json({ success: true, message: 'Customer profile', data: result });
+        } catch (error) { next(error); }
+    }
+
+    async balanceOperation(req, res, next) {
+        try {
+            const result = await CustomerService.marketplaceBalanceOperation(req.body || {});
+            res.json({ success: true, message: 'Balance operation processed', data: result });
+        } catch (error) { next(error); }
+    }
+
     async verifyOtp(req, res, next) {
         try {
             const result = await CustomerService.verifyOtp(req.body);

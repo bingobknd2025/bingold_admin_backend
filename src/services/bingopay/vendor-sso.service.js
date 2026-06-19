@@ -416,6 +416,7 @@ class VendorSsoService {
             // platforms show the same data (status, KYC, wallet addresses).
             let walletAddresses = this._asObject(vendor.wallet_addresses);
             let balances = null;
+            let bigoldBalance = null;
             let profileSyncedAt = vendor.profile_synced_at || null;
             try {
                 if (email) {
@@ -423,6 +424,7 @@ class VendorSsoService {
                     if (synced.vendor) vendor = synced.vendor;          // freshly-updated row
                     walletAddresses = synced.walletAddresses;
                     balances = synced.balances;
+                    bigoldBalance = synced.bigoldBalance;
                     profileSyncedAt = synced.syncedAt;
                 }
             } catch (_) { /* fall back to the cached local copy on any sync error */ }
@@ -434,7 +436,45 @@ class VendorSsoService {
                 kycDecision: vendor.kyc_decision || null,
                 walletAddresses,
                 balances,
+                bigoldBalance,
                 profileSyncedAt
+            };
+        });
+    }
+
+    // ─── 6c. Vendor profile (full, synced from BinGold get_profile) ──
+    async getProfile(uuid) {
+        return this._audit('sso_vendor_profile', { uuid }, async (ctx) => {
+            let vendor = await this.resolveVendorByUuid(uuid, {
+                include: [{ model: BingopayUser, as: 'user', attributes: ['id', 'email', 'phone', 'status'] }]
+            });
+            ctx.userId = vendor.user_id;
+            const email = vendor.user ? vendor.user.email : null;
+            const phone = vendor.user ? vendor.user.phone : null;
+
+            // Pull the live BinGold profile and sync it locally (best-effort).
+            let synced = null;
+            try { if (email) synced = await UserSync.syncFromExternalProfile(email); } catch (_) { /* fall back to cache */ }
+            if (synced && synced.vendor) vendor = synced.vendor;
+
+            return {
+                vendor: {
+                    ...this.vendorSummary(vendor),
+                    email,
+                    phone,
+                    description: vendor.description || null,
+                    gstNumber: vendor.gst_number || null,
+                    panNumber: vendor.pan_number || null,
+                    supportEmail: vendor.support_email || null,
+                    supportPhone: vendor.support_phone || null,
+                    kycDecision: vendor.kyc_decision || null
+                },
+                walletAddresses: synced ? synced.walletAddresses : this._asObject(vendor.wallet_addresses),
+                balances: synced ? synced.balances : null,
+                bigoldBalance: synced ? synced.bigoldBalance : null,
+                usdtBalance: synced ? synced.usdtBalance : null,
+                bingold: synced ? synced.raw : (this._asObject(vendor.bingold_profile) || null),
+                profileSyncedAt: synced ? synced.syncedAt : (vendor.profile_synced_at || null)
             };
         });
     }

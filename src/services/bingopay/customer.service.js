@@ -80,6 +80,7 @@ class CustomerService {
                 hasLocalProfile: true,
                 profile: synced.user,
                 walletAddresses: synced.walletAddresses,
+                bigoldBalance: synced.bigoldBalance,
                 raw: synced.raw
             };
         } catch (err) {
@@ -162,6 +163,64 @@ class CustomerService {
         await this._log('login', { email: payload.email }, upstream, 'success', { bingopay_user_id: user.id });
 
         return { profile: user, bingold: upstream };
+    }
+
+    // Full customer profile: fetch live from BinGold (external get_profile),
+    // sync it into our DB, and return the merged view + wallet addresses/balances.
+    async getProfile(email) {
+        if (!email) throw new ApiError(400, 'email is required');
+        try {
+            const synced = await UserSync.syncFromExternalProfile(email);
+            await this._log('profile', { email }, synced.raw, 'success', { bingopay_user_id: synced.user && synced.user.id });
+            return {
+                profile: synced.user,
+                walletAddresses: synced.walletAddresses,
+                balances: synced.balances,
+                bigoldBalance: synced.bigoldBalance,
+                usdtBalance: synced.usdtBalance,
+                bingold: synced.raw,
+                profileSyncedAt: synced.syncedAt
+            };
+        } catch (err) {
+            await this._log('profile', { email }, { error: err.message }, 'failed');
+            throw err;
+        }
+    }
+
+    // Add or deduct a BinGold user's marketplace (BIGOD) balance via the external
+    // API, then re-sync the local profile so the new balance is reflected.
+    //   operation: 'add' | 'deduct'
+    async marketplaceBalanceOperation({ email, amount, operation, reference, description } = {}) {
+        if (!email) throw new ApiError(400, 'email is required');
+        const amt = Number(amount);
+        if (!Number.isFinite(amt) || amt <= 0) throw new ApiError(400, 'amount must be a positive number');
+        const op = String(operation || '').toLowerCase();
+        if (!['add', 'deduct'].includes(op)) throw new ApiError(400, "operation must be 'add' or 'deduct'");
+
+        const body = { email, amount: amt, operation: op, reference, description };
+
+        let upstream;
+        try {
+            upstream = await BingoldApi.marketplaceBalanceOperation(body);
+        } catch (err) {
+            await this._log(`balance_${op}`, body, { error: err.message }, 'failed');
+            throw err;
+        }
+
+        // Refresh the cached profile/balance after the movement (best-effort).
+        let synced = null;
+        try { synced = await UserSync.syncFromExternalProfile(email); } catch (_) { /* best-effort */ }
+
+        await this._log(`balance_${op}`, body, upstream, 'success', { bingopay_user_id: synced && synced.user && synced.user.id });
+
+        return {
+            result: upstream,
+            operation: op,
+            amount: amt,
+            reference: reference || null,
+            bigoldBalance: synced ? synced.bigoldBalance : undefined,
+            balances: synced ? synced.balances : undefined
+        };
     }
 
     async verifyOtp(payload) {

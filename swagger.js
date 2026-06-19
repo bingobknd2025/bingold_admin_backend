@@ -27,6 +27,7 @@ const doc = {
   tags: [
     { name: 'Vendor SSO', description: 'Partner/SSO-facing vendor flow: QR handoff, register/login, KYC/KYB (x-api-key only, vendors addressed by uuid)' },
     { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },
+    { name: 'BingoPay - Marketplace', description: 'Server-to-server BIGOD money movement for the marketplace: order pay/refund + balance add/deduct (x-api-key)' },
     { name: 'BingoPay - Wallet', description: 'Balance / ledger / withdraw (forwards the BinGold token)' },
     { name: 'BingoPay - Merchant', description: 'Vendor self-service: onboarding, QR, KYC, dashboard, withdraw' },
     { name: 'BingoPay - Pay', description: 'Customer QR payment flow: resolve, quote, confirm' },
