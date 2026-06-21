@@ -73,9 +73,21 @@ app.post('/api/bingold/webhooks/sumsub',
 
 // Swagger UI — public docs page, mounted BEFORE the api-key middleware so the
 // browser can load it without an x-api-key header.
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerDocument = require('../swagger_output.json');
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger_output.json');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    swaggerOptions: {
+      url: undefined, // prevents external JSON fetch
+    }
+  })
+);
 
 app.use(apiKeyMiddleware);
 
