@@ -12,7 +12,14 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-/* Security */
+/* Security
+ * CSP is kept ON (protects the API), but tuned so Swagger UI works:
+ *  - script-src adds 'unsafe-inline' (swagger-ui-express injects an inline
+ *    init script; without this the docs page renders blank).
+ *  - 'upgrade-insecure-requests' is REMOVED so the page can be opened over
+ *    plain http://<ip>:<port> without the browser forcing https
+ *    (that forced upgrade is what caused ERR_SSL_PROTOCOL_ERROR).
+ */
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -20,7 +27,11 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+        "img-src": ["'self'", "data:", "https:"],
         "connect-src": ["'self'", "ws:", "wss:"],
+        "upgrade-insecure-requests": null,
       },
     },
   })
@@ -55,6 +66,18 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+/* ─── Public routes (NO api-key, NO JWT) ─────────────────────────── */
+
+// Health must be reachable without the api key (load balancers / uptime checks).
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Bingold Admin Backend is running",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+  });
+});
+
 const publicAgentController = require('./controllers/public/agent.public.controller');
 app.get('/verify/:code', publicAgentController.verifyAgentRedirect);
 app.get('/verify', publicAgentController.verifyAgentRedirect);
@@ -72,23 +95,24 @@ app.post('/api/bingold/webhooks/sumsub',
   sumsubPublicController.handleWebhook);
 
 // Swagger UI — public docs page, mounted BEFORE the api-key middleware so the
-// browser can load it without an x-api-key header.
-// const swaggerUi = require('swagger-ui-express');
-// const swaggerDocument = require('../swagger_output.json');
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// browser can load it without an x-api-key header. The spec is bundled inline
+// (no external swagger.json fetch). persistAuthorization keeps the entered
+// x-api-key across reloads.
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger_output.json');
-
 app.use(
   '/api-docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
     swaggerOptions: {
-      url: undefined, // prevents external JSON fetch
-    }
+      docExpansion: 'none',
+      filter: true,
+      persistAuthorization: true,
+    },
   })
 );
 
+/* ─── API-key protected ──────────────────────────────────────────── */
 app.use(apiKeyMiddleware);
 
 app.use("/api/bingold/auth", require("./routes/auth.routes"));
@@ -103,17 +127,9 @@ app.use("/api/bingold/bingopay/pay", require("./routes/bingopay/pay.routes"));
 // is mounted before the JWT middleware below.
 app.use("/api/v1/common/vendors", require("./routes/common/vendor-sso.routes"));
 
+/* ─── JWT protected (admin) ──────────────────────────────────────── */
 app.use("/api/bingold", jwtAuthMiddleware);
 app.use("/api/bingold/admin", require("./routes/admin/admin.routes"));
-
-app.get("/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "Bingold Admin Backend is running",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-  });
-});
 
 app.use((req, res) => {
   res.status(404).json({
