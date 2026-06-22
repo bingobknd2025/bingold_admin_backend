@@ -23,6 +23,11 @@ const jwt = require("jsonwebtoken");
 const db = require("../models");
 
 module.exports = async (req, res, next) => {
+  // Let CORS preflight through — OPTIONS carries no Authorization header.
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {

@@ -63,5 +63,5 @@ const routes = ['./src/app.js'];
 root file where the route starts, such as index.js, app.js, routes.js, etc ... */
 
 swaggerAutogen(outputFile, routes, doc).then(() => {
-    console.log('Swagger generated successfully');
+  console.log('Swagger generated successfully');
 });
