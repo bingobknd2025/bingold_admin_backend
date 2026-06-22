@@ -10,14 +10,18 @@ const doc = {
     title: 'Bingold Admin API',
     description: 'API for Bingold Admin Panel (RBAC, Blogs, News) and the BingoPay merchant payment layer on top of BinGold.',
   },
-  // OpenAPI 3.0 uses `servers` instead of host/basePath/schemes. The auto-generated
-  // paths ALREADY include the full prefix (e.g. '/api/bingold/auth/login'), so the
-  // server base must be the bare origin ('') — otherwise Swagger UI concatenates it
-  // with the path and produces a doubled '/api/api/...' request URL.
-  // Set SWAGGER_SERVER_URL to override (e.g. an absolute origin) if ever needed.
+  // OpenAPI 3.0 uses `servers` instead of host/basePath/schemes.
+  // The PUBLIC domain sits behind an outer reverse proxy mounted at '/api' that
+  // strips that one segment before forwarding to the backend. The app's own
+  // routes already carry an '/api/bingold/...' prefix, so the real public URL is
+  // DOUBLE: e.g. https://admin-blog.bingold.to/api/api/bingold/blogs.
+  //   server base '/api'  +  path '/api/bingold/blogs'  =  /api/api/bingold/blogs
+  // That doubling is intentional — it's what makes Swagger "Try it out" hit the
+  // live endpoints. Set SWAGGER_SERVER_URL to override (e.g. '' for direct/local
+  // access with no proxy).
   servers: [{
-    url: process.env.SWAGGER_SERVER_URL || '',
-    description: 'Production'
+    url: process.env.SWAGGER_SERVER_URL ?? '/api',
+    description: 'Production (behind the /api reverse proxy)'
   }],
   tags: [
     { name: 'Vendor SSO', description: 'Partner/SSO-facing vendor flow: QR handoff, register/login, KYC/KYB (x-api-key only, vendors addressed by uuid)' },

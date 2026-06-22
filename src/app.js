@@ -37,19 +37,33 @@ app.use(
   })
 );
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || ["*"];
+// Normalize the allow-list: trim whitespace/newlines from each entry and drop
+// any trailing slash, so 'https://bingold.to/' in the env matches the browser's
+// origin 'https://bingold.to'. Without this, a single stray space made the
+// origin check fail and the preflight returned 500.
+const stripSlash = (s) => s.replace(/\/+$/, "");
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "*")
+  .split(",")
+  .map((o) => stripSlash(o.trim()))
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+      // No Origin header = same-origin, curl, or server-to-server → allow.
+      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(stripSlash(origin))) {
+        return callback(null, true);
       }
+      // Disallowed origin: reject WITHOUT throwing. Throwing here routed the
+      // request to the error middleware and returned 500 on the OPTIONS
+      // preflight; returning `false` lets cors respond normally (no CORS
+      // headers) so the browser reports a clean CORS failure instead.
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"]
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
+    optionsSuccessStatus: 204,
   })
 );
 
