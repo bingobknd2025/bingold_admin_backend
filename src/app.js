@@ -100,8 +100,12 @@ app.post('/api/bingold/webhooks/sumsub',
 // x-api-key across reloads.
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger_output.json');
+// Mounted at BOTH bases so the docs load whether or not the nginx /api reverse
+// proxy strips the prefix: hitting it directly is /api-docs, and the public
+// https://admin-blog.bingold.to/api/api-docs lands here too. Both sit ABOVE the
+// api-key middleware, so neither path triggers "Invalid or missing API key".
 app.use(
-  '/api-docs',
+  ['/api-docs', '/api/api-docs'],
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
     swaggerOptions: {
