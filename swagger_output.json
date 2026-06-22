@@ -7,16 +7,12 @@
   },
   "servers": [
     {
-      "url": "/api/api",
-      "description": "Configured default"
+      "url": "/api",
+      "description": "Behind /api reverse proxy (staging/prod)"
     },
     {
       "url": "/",
       "description": "Direct (local, no proxy)"
-    },
-    {
-      "url": "/api",
-      "description": "Behind /api reverse proxy (staging/prod)"
     }
   ],
   "tags": [
@@ -70,6 +66,16 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/verify/{code}": {
       "get": {
         "description": "",
@@ -286,22 +292,6 @@
           }
         },
         "security": []
-      }
-    },
-    "/health": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        }
       }
     },
     "/api/bingold/auth/register": {

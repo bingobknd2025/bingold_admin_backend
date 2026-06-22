@@ -101,7 +101,7 @@ app.post('/api/bingold/webhooks/sumsub',
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger_output.json');
 app.use(
-  '/api-docs',
+  '/api/api-docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
     swaggerOptions: {
