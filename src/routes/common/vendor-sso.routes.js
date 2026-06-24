@@ -8,9 +8,21 @@ const ctrl = require("../../controllers/common/vendor-sso.controller");
 // ─── Onboarding / auth (static paths first) ──────────────────────────
 router.post("/sso/register",
   /*  #swagger.tags = ['Vendor SSO']
-      #swagger.summary = 'Register a vendor via BinGold external API (server-to-server, no OTP). Stores the SAME BinGold uuid on both tables and returns a vendor JWT + BinGold token.'
+      #swagger.summary = 'Vendor registration step 1 (OTP-gated): checks the email, triggers BinGold signup (sends OTP + welcome mail) and stashes the data. Identity + vendor row are created on /sso/verify-otp.'
       #swagger.requestBody = { required:true, content: { "application/json": { schema: { type:'object', required:['fullName','shopName','shopSlug','email','phone','password','countryId'], properties: { fullName:{type:'string'}, email:{type:'string'}, phone:{type:'string'}, password:{type:'string', description:'Strong: 8+ chars incl. upper/lower/number/special'}, countryId:{type:'string', description:'Dialing code, e.g. 91'}, shopName:{type:'string'}, shopSlug:{type:'string'}, businessName:{type:'string'}, description:{type:'string'}, gstNumber:{type:'string'}, panNumber:{type:'string'}, supportEmail:{type:'string'}, supportPhone:{type:'string'} } }, example: { fullName:'Acme Owner', email:'owner@acme.com', phone:'9876543210', password:'Secret@123', countryId:'91', shopName:'Acme Store', shopSlug:'acme-store', businessName:'Acme Pvt Ltd', description:'We sell gadgets', gstNumber:'22AAAAA0000A1Z5', panNumber:'AAAAA0000A', supportEmail:'support@acme.com', supportPhone:'9876543211' } } } } */
   ctrl.register);
+
+router.post("/sso/verify-otp",
+  /*  #swagger.tags = ['Vendor SSO']
+      #swagger.summary = 'Vendor registration step 2: verify the OTP. On success creates the BinGold identity (register_user) + vendor row and returns a vendor JWT + BinGold token.'
+      #swagger.requestBody = { required:true, content: { "application/json": { schema: { type:'object', required:['email','otp'], properties: { email:{type:'string'}, otp:{type:'string'}, type:{type:'string', example:'SIGNUP'} } }, example: { email:'owner@acme.com', otp:'123456' } } } } */
+  ctrl.verifyOtp);
+
+router.post("/sso/resend-otp",
+  /*  #swagger.tags = ['Vendor SSO']
+      #swagger.summary = 'Resend the registration OTP (e.g. when it expired) for a pending vendor registration.'
+      #swagger.requestBody = { required:true, content: { "application/json": { schema: { type:'object', required:['email'], properties: { email:{type:'string'}, type:{type:'string', example:'SIGNUP'} } }, example: { email:'owner@acme.com' } } } } */
+  ctrl.resendOtp);
 
 router.post("/sso/login",
   /*  #swagger.tags = ['Vendor SSO']

@@ -37,6 +37,22 @@ class VendorSsoController {
         } catch (error) { next(error); }
     }
 
+    // 4b. POST /sso/verify-otp
+    async verifyOtp(req, res, next) {
+        try {
+            const data = await VendorSsoService.verifyOtp(req.body || {});
+            res.status(201).json({ success: true, message: 'Vendor registered', data });
+        } catch (error) { next(error); }
+    }
+
+    // 4c. POST /sso/resend-otp
+    async resendOtp(req, res, next) {
+        try {
+            const data = await VendorSsoService.resendOtp(req.body || {});
+            res.json({ success: true, message: 'OTP resent', data });
+        } catch (error) { next(error); }
+    }
+
     // 5. POST /sso/login
     async login(req, res, next) {
         try {

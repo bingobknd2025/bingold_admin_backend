@@ -33,6 +33,7 @@ db.KycApplication = require("./kyc_application.model")(sequelize, DataTypes);
 db.SsoSyncLog = require("./sso_sync_log.model")(sequelize, DataTypes);
 db.VendorKycDocument = require("./vendor_kyc_document.model")(sequelize, DataTypes);
 db.VendorSsoToken = require("./vendor_sso_token.model")(sequelize, DataTypes);
+db.BingopayPendingRegistration = require("./bingopay_pending_registration.model")(sequelize, DataTypes);
 
 // Define associations
 

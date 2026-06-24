@@ -19,7 +19,7 @@ router.post("/auth/user-exists",
 
 router.post("/auth/register",
   /*  #swagger.tags = ['BingoPay - Customer Auth']
-      #swagger.summary = 'Register a new customer via BinGold external API (server-to-server, no OTP); stores shared uuid + returns a BinGold token'
+      #swagger.summary = 'Register step 1 (OTP-gated): checks the email, triggers BinGold signup (sends OTP + welcome mail) and stashes the data. The identity is created on /auth/verify-otp.'
       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['firstName','lastName','password','countryId','email','phoneNumber'], properties: { firstName: { type:'string', example:'John' }, lastName: { type:'string', example:'Doe' }, password: { type:'string', example:'Passw0rd@123', description:'Strong: 8+ chars incl. upper/lower/number/special' }, countryId: { type:'string', example:'91', description:'Dialing code' }, email: { type:'string', example:'john@example.com' }, phoneNumber: { type:'string', example:'9876543210' } } } } } } */
   customerController.register);
 
@@ -56,7 +56,7 @@ router.post("/auth/profile",
 
 router.post("/auth/verify-otp",
   /*  #swagger.tags = ['BingoPay - Customer Auth']
-      #swagger.summary = 'Verify an OTP (signup/login/2fa) against BinGold'
+      #swagger.summary = 'Verify an OTP. For a pending registration this is step 2: creates the BinGold identity (register_user), mirrors it locally and returns a token. Also used for login/2fa OTPs.'
       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['email','otp'], properties: { email: { type:'string', example:'john@example.com' }, otp: { type:'string', example:'123456' }, type: { type:'string', example:'SIGNUP' }, tOtp: { type:'string' }, newEmail: { type:'string' }, google2faSecret: { type:'string' }, token: { type:'string' } } } } } } */
   customerController.verifyOtp);
 

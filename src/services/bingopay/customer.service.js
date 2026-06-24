@@ -8,6 +8,7 @@ const { BingopayUser, SsoSyncLog } = db;
 const ApiError = require('../../utils/apiError.util');
 const BingoldApi = require('./bingold-api.service');
 const UserSync = require('./user-sync.service');
+const PendingReg = require('./pending-registration.service');
 const { hashPassword, comparePassword } = require('../../utils/hash.util');
 
 const SECRET_KEYS = ['password', 'confirmPassword', 'pin', 'confirmPin', 'otp', 'tOtp',
@@ -91,12 +92,24 @@ class CustomerService {
         }
     }
 
-    // New-user flow: create the identity on BinGold via the external API
-    // (server-to-server, no OTP) and mirror it locally with the SAME uuid. The
-    // returned token can be used straight away for wallet calls.
+    // New-user flow, phase 1 of 2 (OTP-gated):
+    //   1) make sure the email isn't already registered (user_exists),
+    //   2) trigger BinGold signup so it sends the OTP + welcome mail,
+    //   3) stash the submitted data (password encrypted) as a pending row.
+    // The identity is NOT created yet — that happens in verifyOtp() via
+    // register_user once the OTP is confirmed.
     async register(payload) {
         const required = ['firstName', 'lastName', 'password', 'countryId', 'email', 'phoneNumber'];
         for (const f of required) if (!payload[f]) throw new ApiError(400, `${f} is required`);
+
+        // 1) Reject emails that already have a BinGold account.
+        let exists = false;
+        try {
+            const existsResp = await BingoldApi.userExists(payload.email);
+            const d = existsResp && (existsResp.data ?? existsResp);
+            exists = typeof d === 'boolean' ? d : Boolean(d && (d.exists ?? d.userExists ?? d.isExist ?? d.status));
+        } catch (_) { /* treat an errored check as "unknown"; do not block signup */ }
+        if (exists) throw new ApiError(409, 'A user with this email already exists. Please login.');
 
         const body = {
             email: payload.email,
@@ -108,32 +121,35 @@ class CustomerService {
             userType: 'USER'
         };
 
+        // 2) Ask BinGold to send the OTP + welcome mail (no identity created yet).
         let upstream;
         try {
-            upstream = await BingoldApi.registerExternalUser(body);
+            upstream = await BingoldApi.signup(body);
         } catch (err) {
             await this._log('signup', body, { error: err.message }, 'failed');
             throw err;
         }
 
-        const d = (upstream && upstream.data) || {};
-        const bingoldUuid = d.id ? String(d.id) : null;
-        const password_hash = await hashPassword(String(payload.password));
-
-        const local = await this._upsertLocalUser({
-            uuid: bingoldUuid || undefined,
+        // 3) Persist the in-flight registration for the verify step to consume.
+        await PendingReg.save({
             email: payload.email,
+            accountType: 'customer',
+            password: payload.password,
+            firstName: payload.firstName,
+            lastName: payload.lastName,
             phone: payload.phoneNumber,
-            first_name: payload.firstName,
-            last_name: payload.lastName,
-            password_hash,
-            account_type: 'customer',
-            status: 'active'
+            countryId: payload.countryId,
+            otpType: 'SIGNUP'
         });
 
-        await this._log('signup', body, upstream, 'success', { bingopay_user_id: local && local.id });
+        await this._log('signup', body, upstream, 'success');
 
-        return { bingold: upstream, profile: local, token: d.token || null };
+        return {
+            otpSent: true,
+            email: payload.email,
+            message: 'OTP sent to your email. Verify it to complete registration.',
+            bingold: upstream
+        };
     }
 
     // Existing-user flow: authenticate against the local password set at
@@ -243,6 +259,51 @@ class CustomerService {
             throw err;
         }
 
+        // Phase 2 of the OTP-gated signup: if a pending registration exists for
+        // this email, the OTP just confirmed it — now create the BinGold identity
+        // via register_user, mirror it locally, and clear the pending row.
+        const pending = await PendingReg.find(payload.email);
+        if (pending && pending.accountType === 'customer') {
+            let identity;
+            try {
+                identity = await UserSync.registerExternalIdentity({
+                    email: pending.email,
+                    password: pending.password,
+                    firstName: pending.firstName,
+                    lastName: pending.lastName,
+                    countryId: pending.countryId,
+                    phone: pending.phone,
+                    userType: 'USER'
+                });
+            } catch (err) {
+                await this._log('signup', { email: pending.email }, { error: err.message }, 'failed');
+                throw err;
+            }
+
+            const password_hash = await hashPassword(String(pending.password));
+            const local = await this._upsertLocalUser({
+                uuid: identity.uuid || undefined,
+                email: pending.email,
+                phone: pending.phone,
+                first_name: pending.firstName,
+                last_name: pending.lastName,
+                password_hash,
+                account_type: 'customer',
+                status: 'active',
+                markLogin: true
+            });
+
+            await PendingReg.remove(pending.email);
+            await this._log('verify_otp', body, upstream, 'success', { bingopay_user_id: local && local.id });
+            return {
+                registered: true,
+                bingold: identity.raw,
+                profile: local,
+                token: identity.token || extractToken(upstream)
+            };
+        }
+
+        // No pending registration — a plain OTP verify (login / 2fa / email change).
         const token = extractToken(upstream);
         const local = await this._upsertLocalUser({
             email: payload.email,

@@ -119,6 +119,36 @@ async function upsertUser(data = {}) {
     });
 }
 
+// Provision the BinGold identity via the external register_user API and return
+// the shared uuid + session token. Used after OTP verification (the OTP step
+// only validated the email; register_user is what actually creates the identity).
+// If register_user reports the user already exists, fall back to get_profile to
+// recover the uuid so onboarding can still complete.
+async function registerExternalIdentity({ email, password, firstName, lastName, countryId, phone, userType = 'USER' }) {
+    let raw;
+    try {
+        raw = await BingoldApi.registerExternalUser({
+            email,
+            password,
+            firstName: firstName || email,
+            lastName: lastName || firstName || email,
+            countryId: countryId != null ? String(countryId) : undefined,
+            phoneNumber: phone,
+            userType
+        });
+        const d = (raw && raw.data) || {};
+        return { uuid: d.id != null ? String(d.id) : null, token: d.token || null, raw };
+    } catch (err) {
+        const msg = String(err && err.message || '').toLowerCase();
+        const alreadyExists = (err && err.statusCode === 409) || msg.includes('already') || msg.includes('exist');
+        if (!alreadyExists) throw err;
+        // Identity already present (e.g. created by the signup step) — recover uuid.
+        const profile = await BingoldApi.getExternalProfile(email);
+        const p = (profile && profile.data && (profile.data.profile || profile.data)) || {};
+        return { uuid: p.id != null ? String(p.id) : null, token: p.token || null, raw: profile };
+    }
+}
+
 // Resolve the caller's BinGold identity from their session token and upsert the
 // local bingopay_users row. Returns { user, info } where user is the local row.
 async function resolveFromToken(token, extra = {}) {
@@ -211,4 +241,4 @@ async function syncFromExternalProfile(email) {
     };
 }
 
-module.exports = { upsertUser, resolveFromToken, extractProfile, parseExternalProfile, syncFromExternalProfile };
+module.exports = { upsertUser, resolveFromToken, extractProfile, parseExternalProfile, syncFromExternalProfile, registerExternalIdentity };

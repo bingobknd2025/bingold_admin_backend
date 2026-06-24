@@ -62,16 +62,6 @@
     }
   ],
   "paths": {
-    "/health": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/verify/{code}": {
       "get": {
         "description": "",
@@ -288,6 +278,22 @@
           }
         },
         "security": []
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
       }
     },
     "/api/bingold/auth/register": {
@@ -1051,7 +1057,7 @@
         "tags": [
           "BingoPay - Customer Auth"
         ],
-        "summary": "Register a new customer via BinGold external API (server-to-server, no OTP); stores shared uuid + returns a BinGold token",
+        "summary": "Register step 1 (OTP-gated): checks the email, triggers BinGold signup (sends OTP + welcome mail) and stashes the data. The identity is created on /auth/verify-otp.",
         "description": "",
         "responses": {
           "201": {
@@ -1382,7 +1388,7 @@
         "tags": [
           "BingoPay - Customer Auth"
         ],
-        "summary": "Verify an OTP (signup/login/2fa) against BinGold",
+        "summary": "Verify an OTP. For a pending registration this is step 2: creates the BinGold identity (register_user), mirrors it locally and returns a token. Also used for login/2fa OTPs.",
         "description": "",
         "responses": {
           "200": {
@@ -2494,7 +2500,7 @@
         "tags": [
           "Vendor SSO"
         ],
-        "summary": "Register a vendor via BinGold external API (server-to-server, no OTP). Stores the SAME BinGold uuid on both tables and returns a vendor JWT + BinGold token.",
+        "summary": "Vendor registration step 1 (OTP-gated): checks the email, triggers BinGold signup (sends OTP + welcome mail) and stashes the data. Identity + vendor row are created on /sso/verify-otp.",
         "description": "",
         "responses": {
           "201": {
@@ -2580,6 +2586,101 @@
                 "panNumber": "AAAAA0000A",
                 "supportEmail": "support@acme.com",
                 "supportPhone": "9876543211"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/common/vendors/sso/verify-otp": {
+      "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Vendor registration step 2: verify the OTP. On success creates the BinGold identity (register_user) + vendor row and returns a vendor JWT + BinGold token.",
+        "description": "",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "otp": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "SIGNUP"
+                  }
+                }
+              },
+              "example": {
+                "email": "owner@acme.com",
+                "otp": "123456"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/common/vendors/sso/resend-otp": {
+      "post": {
+        "tags": [
+          "Vendor SSO"
+        ],
+        "summary": "Resend the registration OTP (e.g. when it expired) for a pending vendor registration.",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "SIGNUP"
+                  }
+                }
+              },
+              "example": {
+                "email": "owner@acme.com"
               }
             }
           }

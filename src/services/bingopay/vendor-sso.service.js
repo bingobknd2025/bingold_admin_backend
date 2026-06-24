@@ -22,6 +22,7 @@ const ApiError = require('../../utils/apiError.util');
 const { hashPassword, comparePassword } = require('../../utils/hash.util');
 const BingoldApi = require('./bingold-api.service');
 const UserSync = require('./user-sync.service');
+const PendingReg = require('./pending-registration.service');
 
 const MERCHANT_CODE_PREFIX = 'MER';
 const DEFAULT_TTL_SECONDS = 300;
@@ -248,14 +249,15 @@ class VendorSsoService {
         });
     }
 
-    // ─── 4. Register vendor ───────────────────────────────────────
-    // Single-phase, via the BinGold external API (server-to-server, x-api-key,
-    // no OTP): register_user returns the BinGold UUID + token synchronously. That
-    // SAME uuid is stored on BOTH bingopay_users and vendor_profiles, and the
-    // vendor is usable immediately.
+    // ─── 4. Register vendor (phase 1 of 2, OTP-gated) ─────────────
+    // Validates + reserves nothing yet: it checks the email isn't already taken,
+    // asks BinGold signup to send the OTP + welcome mail, and stashes the vendor
+    // data (password encrypted) as a pending row. The BinGold identity and the
+    // vendor_profiles/bingopay_users rows are created in verifyOtp() once the OTP
+    // is confirmed — via register_user, which returns the shared uuid + token.
     async register(data = {}) {
         const { fullName, shopName, shopSlug, email, phone, password, countryId } = data;
-        return this._audit('sso_register', { fullName, shopName, shopSlug, email, phone, countryId }, async (ctx) => {
+        return this._audit('sso_register', { fullName, shopName, shopSlug, email, phone, countryId }, async () => {
             if (!fullName) throw new ApiError(400, 'fullName is required');
             if (!shopName) throw new ApiError(400, 'shopName is required');
             if (!shopSlug) throw new ApiError(400, 'shopSlug is required');
@@ -266,19 +268,27 @@ class VendorSsoService {
 
             const slug = slugify(String(shopSlug), { lower: true, strict: true });
 
-            // Uniqueness pre-checks (DB unique indexes are the real guard).
+            // Uniqueness pre-checks (DB unique indexes are the real guard at verify).
             if (await VendorProfile.findOne({ where: { shop_slug: slug } })) {
                 throw new ApiError(409, 'shopSlug is already taken');
             }
             if (await BingopayUser.findOne({ where: { email } })) {
                 throw new ApiError(409, 'A user with this email already exists');
             }
+            // Reject emails that already have a BinGold account.
+            let exists = false;
+            try {
+                const existsResp = await BingoldApi.userExists(email);
+                const ed = existsResp && (existsResp.data ?? existsResp);
+                exists = typeof ed === 'boolean' ? ed : Boolean(ed && (ed.exists ?? ed.userExists ?? ed.isExist ?? ed.status));
+            } catch (_) { /* errored check is treated as "unknown" */ }
+            if (exists) throw new ApiError(409, 'A user with this email already exists. Please login.');
 
             const [firstName, ...rest] = String(fullName).trim().split(/\s+/);
             const lastName = rest.join(' ') || null;
 
-            // 1) Create the identity on BinGold — returns the shared uuid + token.
-            const upstream = await BingoldApi.registerExternalUser({
+            // Ask BinGold to send the OTP + welcome mail (no identity created yet).
+            const upstream = await BingoldApi.signup({
                 email,
                 password,
                 firstName: firstName || fullName,
@@ -287,22 +297,86 @@ class VendorSsoService {
                 phoneNumber: phone,
                 userType: 'VENDOR'
             });
-            const d = (upstream && upstream.data) || {};
-            const bingoldUuid = d.id ? String(d.id) : null;
-            const bingoldToken = d.token || null;
+
+            // Stash everything verifyOtp() needs to finish onboarding.
+            await PendingReg.save({
+                email,
+                accountType: 'vendor',
+                password,
+                firstName: firstName || fullName,
+                lastName,
+                phone,
+                countryId,
+                otpType: 'SIGNUP',
+                payload: {
+                    fullName,
+                    shopName,
+                    shopSlug: slug,
+                    businessName: data.businessName || shopName,
+                    description: data.description || null,
+                    gstNumber: data.gstNumber || null,
+                    panNumber: data.panNumber || null,
+                    supportEmail: data.supportEmail || null,
+                    supportPhone: data.supportPhone || null
+                }
+            });
+
+            return {
+                otpSent: true,
+                email,
+                message: 'OTP sent to your email. Verify it to complete vendor registration.',
+                bingold: upstream
+            };
+        });
+    }
+
+    // ─── 4b. Verify OTP → finish vendor registration ──────────────
+    // Confirms the OTP with BinGold, then (if a pending vendor registration
+    // exists) creates the BinGold identity via register_user and mirrors it into
+    // vendor_profiles + bingopay_users with the SAME uuid. Returns a vendor JWT.
+    async verifyOtp(data = {}) {
+        const { email, otp, type } = data;
+        return this._audit('sso_verify_otp', { email }, async (ctx) => {
+            if (!email) throw new ApiError(400, 'email is required');
+            if (!otp) throw new ApiError(400, 'otp is required');
+
+            const pending = await PendingReg.find(email);
+            if (!pending || pending.accountType !== 'vendor') {
+                throw new ApiError(404, 'No pending vendor registration found for this email');
+            }
+
+            // 1) Confirm the OTP with BinGold.
+            const verifyResp = await BingoldApi.verifyOtp({
+                email,
+                otp,
+                type: type || pending.otpType || 'SIGNUP'
+            });
+
+            // 2) Create the BinGold identity now that the email is verified.
+            const identity = await UserSync.registerExternalIdentity({
+                email: pending.email,
+                password: pending.password,
+                firstName: pending.firstName,
+                lastName: pending.lastName,
+                countryId: pending.countryId,
+                phone: pending.phone,
+                userType: 'VENDOR'
+            });
+            const bingoldUuid = identity.uuid;
             if (!bingoldUuid) throw new ApiError(502, 'BinGold did not return a user identity');
 
-            const password_hash = await hashPassword(String(password));
+            const p = pending.payload || {};
+            const password_hash = await hashPassword(String(pending.password));
 
-            // 2) Mirror into the marketplace DB — same uuid on both rows.
+            // 3) Mirror into the marketplace DB — same uuid on both rows.
             const { vendor, user } = await db.sequelize.transaction(async (t) => {
                 const user = await BingopayUser.create({
                     uuid: bingoldUuid,
-                    email,
-                    phone,
+                    email: pending.email,
+                    phone: pending.phone,
                     password_hash,
-                    first_name: firstName || null,
-                    last_name: lastName,
+                    first_name: pending.firstName || null,
+                    last_name: pending.lastName,
                     account_type: 'vendor',
                     status: 'active'
                 }, { transaction: t });
@@ -312,14 +386,14 @@ class VendorSsoService {
                 const vendor = await VendorProfile.create({
                     user_id: user.id,
                     uuid: bingoldUuid,
-                    business_name: data.businessName || shopName,
-                    shop_name: shopName,
-                    shop_slug: slug,
-                    description: data.description || null,
-                    gst_number: data.gstNumber || null,
-                    pan_number: data.panNumber || null,
-                    support_email: data.supportEmail || null,
-                    support_phone: data.supportPhone || null,
+                    business_name: p.businessName || p.shopName,
+                    shop_name: p.shopName,
+                    shop_slug: p.shopSlug,
+                    description: p.description || null,
+                    gst_number: p.gstNumber || null,
+                    pan_number: p.panNumber || null,
+                    support_email: p.supportEmail || null,
+                    support_phone: p.supportPhone || null,
                     merchant_code,
                     kyc_status: 'pending',
                     status: 'pending'
@@ -328,15 +402,29 @@ class VendorSsoService {
                 return { vendor, user };
             });
 
+            await PendingReg.remove(pending.email);
             ctx.userId = user.id;
             const accessToken = this.mintVendorToken(vendor, user);
             return {
+                registered: true,
                 vendor: this.vendorSummary(vendor),
                 accessToken,
                 tokenType: 'Bearer',
-                bingoldToken,
-                bingold: upstream
+                bingoldToken: identity.token || null,
+                bingold: verifyResp
             };
+        });
+    }
+
+    // ─── 4c. Resend OTP (e.g. expired) ────────────────────────────
+    async resendOtp(data = {}) {
+        const { email, type } = data;
+        return this._audit('sso_resend_otp', { email }, async () => {
+            if (!email) throw new ApiError(400, 'email is required');
+            const pending = await PendingReg.find(email);
+            const otpType = type || (pending && pending.otpType) || 'SIGNUP';
+            const resp = await BingoldApi.resendOtp({ email, type: otpType });
+            return { otpSent: true, email, bingold: resp };
         });
     }
 
