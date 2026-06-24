@@ -9,6 +9,10 @@
     {
       "url": "/api",
       "description": "Production (behind the /api reverse proxy)"
+    },
+    {
+      "url": "/",
+      "description": "Local (direct, no proxy)"
     }
   ],
   "tags": [

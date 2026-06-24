@@ -19,10 +19,17 @@ const doc = {
   // That doubling is intentional — it's what makes Swagger "Try it out" hit the
   // live endpoints. Set SWAGGER_SERVER_URL to override (e.g. '' for direct/local
   // access with no proxy).
-  servers: [{
-    url: process.env.SWAGGER_SERVER_URL ?? '/api',
-    description: 'Production (behind the /api reverse proxy)'
-  }],
+  // Two selectable bases in the Swagger UI "Servers" dropdown. The paths in the
+  // spec already carry one '/api/bingold/...' (or '/api/v1/...') segment, so:
+  //   Production: base '/api'  +  path '/api/bingold/...'  =  /api/api/bingold/...
+  //   Local:      base ''      +  path '/api/bingold/...'  =  /api/bingold/...
+  // Swagger UI strips a server's trailing slash before concatenating, so '/'
+  // effectively means an empty base (= hit the host directly, no proxy).
+  // SWAGGER_SERVER_URL still overrides the production base if set.
+  servers: [
+    { url: process.env.SWAGGER_SERVER_URL ?? '/api', description: 'Production (behind the /api reverse proxy)' },
+    { url: '/', description: 'Local (direct, no proxy)' }
+  ],
   tags: [
     { name: 'Vendor SSO', description: 'Partner/SSO-facing vendor flow: QR handoff, register/login, KYC/KYB (x-api-key only, vendors addressed by uuid)' },
     { name: 'BingoPay - Customer Auth', description: 'SSO onboarding/login proxied to BinGold' },
