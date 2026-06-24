@@ -75,7 +75,11 @@ app.post('/api/bingold/webhooks/sumsub',
 // browser can load it without an x-api-key header.
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger_output.json');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Mounted at BOTH bases: '/api-docs' for direct/local access and '/api/api-docs'
+// so the public doubled-/api URL (https://admin-blog.bingold.to/api/api-docs)
+// lands here too. Both sit ABOVE the api-key middleware, so neither path is
+// gated by x-api-key.
+app.use(['/api-docs', '/api/api-docs'], swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(apiKeyMiddleware);
 
