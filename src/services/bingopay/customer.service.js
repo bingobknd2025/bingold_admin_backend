@@ -118,6 +118,8 @@ class CustomerService {
             throw new ApiError(400, 'password and confirmPassword do not match');
         }
 
+        // NB: signup does NOT accept userType (only the external register_user
+        // does — that runs later, at verify-otp). Sending it here 400s.
         const body = {
             email: payload.email,
             password: payload.password,
@@ -125,8 +127,7 @@ class CustomerService {
             firstName: payload.firstName,
             lastName: payload.lastName,
             countryId: String(payload.countryId),
-            phoneNumber: payload.phoneNumber,
-            userType: 'USER'
+            phoneNumber: payload.phoneNumber
         };
 
         // 2) Ask BinGold to send the OTP + welcome mail (no identity created yet).

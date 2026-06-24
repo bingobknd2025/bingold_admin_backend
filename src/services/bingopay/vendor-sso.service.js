@@ -295,6 +295,8 @@ class VendorSsoService {
             const lastName = rest.join(' ') || null;
 
             // Ask BinGold to send the OTP + welcome mail (no identity created yet).
+            // signup does NOT accept userType (only register_user does, later at
+            // verify-otp where we pass userType: 'VENDOR') — sending it here 400s.
             const upstream = await BingoldApi.signup({
                 email,
                 password,
@@ -302,8 +304,7 @@ class VendorSsoService {
                 firstName: firstName || fullName,
                 lastName: lastName || firstName || fullName,
                 countryId: String(countryId),
-                phoneNumber: phone,
-                userType: 'VENDOR'
+                phoneNumber: phone
             });
 
             // Stash everything verifyOtp() needs to finish onboarding.
