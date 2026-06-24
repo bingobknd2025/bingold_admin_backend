@@ -111,9 +111,17 @@ class CustomerService {
         } catch (_) { /* treat an errored check as "unknown"; do not block signup */ }
         if (exists) throw new ApiError(409, 'A user with this email already exists. Please login.');
 
+        // BinGold signup requires confirmPassword; default it to password when the
+        // client doesn't send it, but reject an explicit mismatch.
+        const confirmPassword = payload.confirmPassword ?? payload.password;
+        if (confirmPassword !== payload.password) {
+            throw new ApiError(400, 'password and confirmPassword do not match');
+        }
+
         const body = {
             email: payload.email,
             password: payload.password,
+            confirmPassword,
             firstName: payload.firstName,
             lastName: payload.lastName,
             countryId: String(payload.countryId),

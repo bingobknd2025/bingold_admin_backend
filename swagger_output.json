@@ -1084,38 +1084,46 @@
                   "firstName",
                   "lastName",
                   "password",
+                  "confirmPassword",
                   "countryId",
                   "email",
                   "phoneNumber"
                 ],
                 "properties": {
                   "firstName": {
-                    "type": "string",
-                    "example": "John"
+                    "type": "string"
                   },
                   "lastName": {
-                    "type": "string",
-                    "example": "Doe"
+                    "type": "string"
                   },
-                  "password": {
-                    "type": "string",
-                    "example": "Passw0rd@123",
-                    "description": "Strong: 8+ chars incl. upper/lower/number/special"
+                  "email": {
+                    "type": "string"
+                  },
+                  "phoneNumber": {
+                    "type": "string"
                   },
                   "countryId": {
                     "type": "string",
-                    "example": "91",
                     "description": "Dialing code"
                   },
-                  "email": {
+                  "password": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "description": "Strong: 8+ chars incl. upper/lower/number/special"
                   },
-                  "phoneNumber": {
+                  "confirmPassword": {
                     "type": "string",
-                    "example": "9876543210"
+                    "description": "Must match password"
                   }
                 }
+              },
+              "example": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john@example.com",
+                "phoneNumber": "9876543210",
+                "countryId": "91",
+                "password": "Passw0rd@123",
+                "confirmPassword": "Passw0rd@123"
               }
             }
           }
@@ -2530,6 +2538,7 @@
                   "email",
                   "phone",
                   "password",
+                  "confirmPassword",
                   "countryId"
                 ],
                 "properties": {
@@ -2545,6 +2554,10 @@
                   "password": {
                     "type": "string",
                     "description": "Strong: 8+ chars incl. upper/lower/number/special"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "description": "Must match password"
                   },
                   "countryId": {
                     "type": "string",
@@ -2581,6 +2594,7 @@
                 "email": "owner@acme.com",
                 "phone": "9876543210",
                 "password": "Secret@123",
+                "confirmPassword": "Secret@123",
                 "countryId": "91",
                 "shopName": "Acme Store",
                 "shopSlug": "acme-store",

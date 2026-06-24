@@ -284,6 +284,13 @@ class VendorSsoService {
             } catch (_) { /* errored check is treated as "unknown" */ }
             if (exists) throw new ApiError(409, 'A user with this email already exists. Please login.');
 
+            // BinGold signup requires confirmPassword; default to password unless
+            // the client sent an explicit (mismatching) value.
+            const confirmPassword = data.confirmPassword ?? password;
+            if (confirmPassword !== password) {
+                throw new ApiError(400, 'password and confirmPassword do not match');
+            }
+
             const [firstName, ...rest] = String(fullName).trim().split(/\s+/);
             const lastName = rest.join(' ') || null;
 
@@ -291,6 +298,7 @@ class VendorSsoService {
             const upstream = await BingoldApi.signup({
                 email,
                 password,
+                confirmPassword,
                 firstName: firstName || fullName,
                 lastName: lastName || firstName || fullName,
                 countryId: String(countryId),

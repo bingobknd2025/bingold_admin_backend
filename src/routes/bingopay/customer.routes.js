@@ -20,7 +20,7 @@ router.post("/auth/user-exists",
 router.post("/auth/register",
   /*  #swagger.tags = ['BingoPay - Customer Auth']
       #swagger.summary = 'Register step 1 (OTP-gated): checks the email, triggers BinGold signup (sends OTP + welcome mail) and stashes the data. The identity is created on /auth/verify-otp.'
-      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['firstName','lastName','password','countryId','email','phoneNumber'], properties: { firstName: { type:'string', example:'John' }, lastName: { type:'string', example:'Doe' }, password: { type:'string', example:'Passw0rd@123', description:'Strong: 8+ chars incl. upper/lower/number/special' }, countryId: { type:'string', example:'91', description:'Dialing code' }, email: { type:'string', example:'john@example.com' }, phoneNumber: { type:'string', example:'9876543210' } } } } } } */
+      #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: 'object', required: ['firstName','lastName','password','confirmPassword','countryId','email','phoneNumber'], properties: { firstName: { type:'string' }, lastName: { type:'string' }, email: { type:'string' }, phoneNumber: { type:'string' }, countryId: { type:'string', description:'Dialing code' }, password: { type:'string', description:'Strong: 8+ chars incl. upper/lower/number/special' }, confirmPassword: { type:'string', description:'Must match password' } } }, example: { firstName:'John', lastName:'Doe', email:'john@example.com', phoneNumber:'9876543210', countryId:'91', password:'Passw0rd@123', confirmPassword:'Passw0rd@123' } } } } } */
   customerController.register);
 
 router.post("/auth/login",
