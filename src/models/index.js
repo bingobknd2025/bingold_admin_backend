@@ -35,6 +35,10 @@ db.VendorKycDocument = require("./vendor_kyc_document.model")(sequelize, DataTyp
 db.VendorSsoToken = require("./vendor_sso_token.model")(sequelize, DataTypes);
 db.BingopayPendingRegistration = require("./bingopay_pending_registration.model")(sequelize, DataTypes);
 
+// Investor (ICO) signup capture — the investor backend is external and cannot
+// store the account type or the company documents, so they land here.
+db.TemporaryInvestorRegistration = require("./temporary_investor_registration.model")(sequelize, DataTypes);
+
 // Define associations
 
 // 1. User Relationships

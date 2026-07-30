@@ -55,6 +55,12 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Dev-only: serve the local-disk fallback used for investor company documents
+// when CLOUDINARY_* is not configured. Never mounted outside development.
+if (process.env.NODE_ENV === 'development') {
+  app.use('/uploads', express.static(require('path').join(process.cwd(), 'uploads')));
+}
+
 const publicAgentController = require('./controllers/public/agent.public.controller');
 app.get('/verify/:code', publicAgentController.verifyAgentRedirect);
 app.get('/verify', publicAgentController.verifyAgentRedirect);
