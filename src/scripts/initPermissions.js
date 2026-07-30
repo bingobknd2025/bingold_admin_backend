@@ -148,6 +148,10 @@ const initPermissionSystem = async () => {
             { name: 'View Payments', slug: 'payment.list', module: 'Payment' },
             { name: 'View Single Payment', slug: 'payment.view', module: 'Payment' },
 
+            // ─── Investor Registrations (investor-ui ICO signup capture) ──
+            { name: 'View Investor Registrations', slug: 'investor_registration.list', module: 'Investor Registration' },
+            { name: 'View Single Investor Registration', slug: 'investor_registration.view', module: 'Investor Registration' },
+
             // Settlements
             { name: 'View Settlements', slug: 'settlement.list', module: 'Settlement' },
             { name: 'View Single Settlement', slug: 'settlement.view', module: 'Settlement' },

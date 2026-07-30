@@ -29,4 +29,8 @@ router.post('/youtube-videos/:id', publicYoutubeVideoController.getVideoById);
 router.post('/agents/verify/:code', publicAgentController.verifyAgent);
 router.post('/agents/verify', publicAgentController.verifyAgent);
 
+// ─── Investor Registration (investor-ui capture) ──────────────
+// POST /api/bingold/investor-registration/capture|verified|status|documents
+router.use('/investor-registration', require('./investor_registration.public.routes'));
+
 module.exports = router;

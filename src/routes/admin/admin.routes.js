@@ -11,6 +11,9 @@ router.use("/youtube", require("../admin/youtube_video.routes"));
 router.use("/agents", require("../admin/agent.routes"));
 router.use("/common", require("../admin/common.routes"));
 
+// Investor (ICO) signup capture from investor-ui — account type + company docs
+router.use("/investor-registrations", require("../admin/investor_registration.routes"));
+
 // BingoPay payment ecosystem (vendors, merchant QR, payments, settlements)
 router.use("/bingopay", require("../admin/bingopay"));
 
