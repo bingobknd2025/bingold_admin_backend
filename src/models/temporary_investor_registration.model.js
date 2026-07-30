@@ -48,6 +48,23 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             defaultValue: 'PENDING_OTP'
         },
+        // ── Company registration details ─────────────────────────────
+        // Null for individuals; required (except where noted) for companies,
+        // enforced in investor-registration.service.js rather than at the DB
+        // level, since one table serves both account types.
+        legal_company_name: { type: DataTypes.STRING(150), allowNull: true },
+        // Optional — only supplied when it differs from the legal name.
+        trading_name: { type: DataTypes.STRING(150), allowNull: true },
+        legal_entity_type: { type: DataTypes.STRING(100), allowNull: true },
+        country_of_incorporation: { type: DataTypes.STRING(100), allowNull: true },
+        registration_number: { type: DataTypes.STRING(50), allowNull: true },
+        tax_identification_number: { type: DataTypes.STRING(50), allowNull: true },
+        date_of_incorporation: { type: DataTypes.DATEONLY, allowNull: true },
+        industry: { type: DataTypes.STRING(150), allowNull: true },
+        business_description: { type: DataTypes.TEXT, allowNull: true },
+        // Optional.
+        company_website: { type: DataTypes.STRING(200), allowNull: true },
+
         // [{ doc_type, label, url, public_id, file_name, mime_type, size, uploaded_at }]
         documents: { type: DataTypes.JSON, allowNull: true },
         documents_submitted_at: { type: DataTypes.DATE, allowNull: true },
