@@ -273,9 +273,26 @@ class InvestorRegistrationService {
         const normalized = normalizeEmail(email);
         if (!normalized) throw new ApiError(400, 'email is required');
 
-        const row = await TemporaryInvestorRegistration.findOne({ where: { email: normalized } });
-        if (!row) throw new ApiError(404, 'No investor registration found for this email');
-        if (row.account_type !== 'company') {
+        let row = await TemporaryInvestorRegistration.findOne({ where: { email: normalized } });
+
+        // Self-heal a missing row rather than dead-ending the user.
+        //
+        // The capture call at signup is fire-and-forget by design, so that a
+        // capture failure can never block the signup itself. When it does fail,
+        // the investor UI still sends the user here (that decision is made from
+        // the form, locally), and a hard 404 would leave them permanently
+        // unable to submit with no way to recover. Reaching this point means
+        // they are an authenticated company completing registration, so the row
+        // is created from what they submitted.
+        if (!row) {
+            row = await TemporaryInvestorRegistration.create({
+                email: normalized,
+                account_type: 'company',
+                status: STATUS.PENDING_DOCUMENTS,
+                source: 'investor-ui',
+                meta: { recovered_at_submission: true }
+            });
+        } else if (row.account_type !== 'company') {
             throw new ApiError(400, 'Company registration is only collected for company accounts');
         }
 
