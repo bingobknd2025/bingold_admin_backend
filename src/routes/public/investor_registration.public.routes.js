@@ -8,8 +8,8 @@ const upload = require('../../middleware/upload.middleware');
 const controller = require('../../controllers/public/investor_registration.public.controller');
 const InvestorRegistrationService = require('../../services/investor-registration.service');
 
-// Field names mirror the doc_type of every required document.
-const documentFields = InvestorRegistrationService.REQUIRED_DOCUMENTS.map((doc) => ({
+// One multipart field per document type; the user attaches whichever apply.
+const documentFields = InvestorRegistrationService.DOCUMENT_TYPES.map((doc) => ({
     name: doc.doc_type,
     maxCount: 1
 }));

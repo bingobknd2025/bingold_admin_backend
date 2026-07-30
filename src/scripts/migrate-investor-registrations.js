@@ -40,6 +40,36 @@ async function run() {
     `);
     console.log('+ temporary_investor_registrations table ensured');
 
+    // Company registration details, added after the table shipped. Each column
+    // is added only when missing, so this is safe to re-run.
+    const companyColumns = {
+        legal_company_name: 'VARCHAR(150) NULL',
+        trading_name: 'VARCHAR(150) NULL',
+        legal_entity_type: 'VARCHAR(100) NULL',
+        country_of_incorporation: 'VARCHAR(100) NULL',
+        registration_number: 'VARCHAR(50) NULL',
+        tax_identification_number: 'VARCHAR(50) NULL',
+        date_of_incorporation: 'DATE NULL',
+        industry: 'VARCHAR(150) NULL',
+        business_description: 'TEXT NULL',
+        company_website: 'VARCHAR(200) NULL'
+    };
+
+    const [existing] = await sequelize.query(`
+        SELECT COLUMN_NAME FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'temporary_investor_registrations'
+    `);
+    const present = new Set(existing.map((row) => row.COLUMN_NAME));
+
+    for (const [column, definition] of Object.entries(companyColumns)) {
+        if (present.has(column)) continue;
+        await sequelize.query(
+            `ALTER TABLE \`temporary_investor_registrations\` ADD COLUMN \`${column}\` ${definition}`
+        );
+        console.log(`+ added column ${column}`);
+    }
+
     console.log('\nMigration complete.');
 }
 

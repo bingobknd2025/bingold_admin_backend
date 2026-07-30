@@ -36,23 +36,33 @@ class InvestorRegistrationPublicController {
         } catch (error) { next(error); }
     }
 
-    // Multipart. One file per required document, field name === doc_type.
+    // Multipart: the company profile plus one file per attached document type
+    // (field name === doc_type).
     async uploadDocuments(req, res, next) {
         try {
-            const { email } = req.body;
+            const { email, company_details: companyDetails, document_types: documentTypes } = req.body;
             if (!email) throw new ApiError(400, 'email is required');
-            const result = await InvestorRegistrationService.saveDocuments(email, req.files || {});
-            res.json({ success: true, message: 'Documents uploaded successfully', data: result });
+
+            const result = await InvestorRegistrationService.saveDocuments(
+                email,
+                companyDetails,
+                documentTypes,
+                req.files || {}
+            );
+            res.json({ success: true, message: 'Company registration submitted successfully', data: result });
         } catch (error) { next(error); }
     }
 
-    // Lets the investor-ui render its upload fields from the backend definition.
+    // Lets the investor-ui render its form from the backend definition.
     async requirements(req, res, next) {
         try {
             res.json({
                 success: true,
-                message: 'Required documents',
-                data: { required_documents: InvestorRegistrationService.REQUIRED_DOCUMENTS }
+                message: 'Company registration requirements',
+                data: {
+                    document_types: InvestorRegistrationService.DOCUMENT_TYPES,
+                    company_fields: InvestorRegistrationService.COMPANY_FIELDS
+                }
             });
         } catch (error) { next(error); }
     }

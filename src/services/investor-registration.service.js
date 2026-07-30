@@ -59,25 +59,42 @@ const STATUS = {
     COMPLETED: 'COMPLETED'
 };
 
-// Internationally accepted company registration documents. The investor-ui
-// renders its upload fields from this same list (mirrored in its config file),
-// so adding a fourth document is a one-line change on each side.
-const REQUIRED_DOCUMENTS = [
-    {
-        doc_type: 'certificate_of_incorporation',
-        label: 'Certificate of Incorporation',
-        hint: 'Or equivalent business registration certificate'
-    },
-    {
-        doc_type: 'articles_of_association',
-        label: 'Memorandum & Articles of Association',
-        hint: 'Or the constitutional document of the entity'
-    },
-    {
-        doc_type: 'proof_of_business_address',
-        label: 'Proof of Business Address',
-        hint: 'Utility bill or bank statement, not older than 3 months'
-    }
+// Document types a company may submit. The user picks a type on the investor-ui
+// and uploads a file against it, so this list is mirrored in that app's
+// adminBackend.config.ts — the two must agree, since doc_type doubles as the
+// multipart field name.
+const DOCUMENT_TYPES = [
+    { doc_type: 'certificate_of_incorporation', label: 'Certificate of Incorporation' },
+    { doc_type: 'certificate_of_good_standing', label: 'Certificate of Good Standing' },
+    { doc_type: 'business_registration_certificate', label: 'Business Registration Certificate' },
+    { doc_type: 'tax_registration_certificate', label: 'Tax Registration Certificate' },
+    { doc_type: 'proof_of_business_address', label: 'Proof of Business Address' },
+    { doc_type: 'memorandum_articles_of_association', label: 'Memorandum & Articles of Association' },
+    { doc_type: 'bank_statement_or_letter', label: 'Bank Statement / Bank Letter' },
+    { doc_type: 'business_license', label: 'Business License' }
+];
+
+const DOCUMENT_TYPE_LABELS = DOCUMENT_TYPES.reduce((acc, type) => {
+    acc[type.doc_type] = type.label;
+    return acc;
+}, {});
+
+/** At least this many documents must accompany a company registration. */
+const MIN_DOCUMENTS = 1;
+
+// Company profile fields. `required` mirrors the investor-ui form, so a payload
+// that bypasses the browser is rejected the same way.
+const COMPANY_FIELDS = [
+    { key: 'legalCompanyName', column: 'legal_company_name', label: 'Legal Company Name', required: true, maxLength: 150 },
+    { key: 'tradingName', column: 'trading_name', label: 'Trading Name / DBA', required: false, maxLength: 150 },
+    { key: 'legalEntityType', column: 'legal_entity_type', label: 'Legal Entity Type', required: true, maxLength: 100 },
+    { key: 'countryOfIncorporation', column: 'country_of_incorporation', label: 'Country of Incorporation', required: true, maxLength: 100 },
+    { key: 'registrationNumber', column: 'registration_number', label: 'Registration Number', required: true, maxLength: 50 },
+    { key: 'taxIdentificationNumber', column: 'tax_identification_number', label: 'Tax Identification Number', required: true, maxLength: 50 },
+    { key: 'dateOfIncorporation', column: 'date_of_incorporation', label: 'Date of Incorporation', required: true },
+    { key: 'industry', column: 'industry', label: 'Industry', required: true, maxLength: 150 },
+    { key: 'businessDescription', column: 'business_description', label: 'Business Description', required: true, maxLength: 500 },
+    { key: 'companyWebsite', column: 'company_website', label: 'Company Website', required: false, maxLength: 200 }
 ];
 
 const ALLOWED_MIME_TYPES = [
@@ -87,12 +104,66 @@ const ALLOWED_MIME_TYPES = [
     'image/png'
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB — mirrored by DOCUMENT_MAX_SIZE in the investor UI
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
+/**
+ * Validate and normalise the company profile. Throws on the first problem so
+ * the investor UI can surface a message the user can act on.
+ */
+const parseCompanyDetails = (raw) => {
+    let details = raw;
+
+    if (typeof details === 'string') {
+        try {
+            details = JSON.parse(details);
+        } catch (_) {
+            throw new ApiError(400, 'Company details are malformed');
+        }
+    }
+    if (!details || typeof details !== 'object') {
+        throw new ApiError(400, 'Company details are required');
+    }
+
+    const columns = {};
+
+    for (const field of COMPANY_FIELDS) {
+        const value = typeof details[field.key] === 'string'
+            ? details[field.key].trim()
+            : details[field.key];
+
+        if (value === undefined || value === null || value === '') {
+            if (field.required) throw new ApiError(400, `${field.label} is required`);
+            columns[field.column] = null;
+            continue;
+        }
+        if (field.maxLength && String(value).length > field.maxLength) {
+            throw new ApiError(400, `${field.label} must be ${field.maxLength} characters or fewer`);
+        }
+        columns[field.column] = value;
+    }
+
+    // Date of incorporation must be a real date, and not in the future.
+    const incorporated = new Date(columns.date_of_incorporation);
+    if (Number.isNaN(incorporated.getTime())) {
+        throw new ApiError(400, 'Date of Incorporation is not a valid date');
+    }
+    if (incorporated > new Date()) {
+        throw new ApiError(400, 'Date of Incorporation cannot be in the future');
+    }
+    columns.date_of_incorporation = incorporated.toISOString().slice(0, 10);
+
+    if (columns.company_website && !/^(https?:\/\/)?([\w-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$/.test(columns.company_website)) {
+        throw new ApiError(400, 'Company Website is not a valid URL');
+    }
+
+    return columns;
+};
+
 class InvestorRegistrationService {
-    get REQUIRED_DOCUMENTS() { return REQUIRED_DOCUMENTS; }
+    get DOCUMENT_TYPES() { return DOCUMENT_TYPES; }
+    get COMPANY_FIELDS() { return COMPANY_FIELDS; }
     get STATUS() { return STATUS; }
 
     // ── Capture ──────────────────────────────────────────────────────
@@ -189,51 +260,66 @@ class InvestorRegistrationService {
             status: row.status,
             documents_required: documentsRequired,
             documents_submitted_at: row.documents_submitted_at,
-            required_documents: REQUIRED_DOCUMENTS
+            document_types: DOCUMENT_TYPES
         };
     }
 
     // ── Document upload ──────────────────────────────────────────────
     // `files` is multer's req.files, keyed by doc_type. Buffers go to the same
     // Cloudinary account the rest of the admin backend uses.
-    async saveDocuments(email, files = {}) {
+    // `files` is multer's req.files, keyed by doc_type. `documentTypes` is the
+    // list of types the user actually attached.
+    async saveDocuments(email, companyDetails, documentTypes, files = {}) {
         const normalized = normalizeEmail(email);
         if (!normalized) throw new ApiError(400, 'email is required');
 
         const row = await TemporaryInvestorRegistration.findOne({ where: { email: normalized } });
         if (!row) throw new ApiError(404, 'No investor registration found for this email');
         if (row.account_type !== 'company') {
-            throw new ApiError(400, 'Documents are only collected for company registrations');
+            throw new ApiError(400, 'Company registration is only collected for company accounts');
         }
 
-        const missing = REQUIRED_DOCUMENTS
-            .filter((doc) => !files[doc.doc_type] || !files[doc.doc_type][0])
-            .map((doc) => doc.label);
+        // Validate the profile before touching storage — no point uploading
+        // files for a submission that will be rejected.
+        const details = parseCompanyDetails(companyDetails);
 
-        if (missing.length) {
-            throw new ApiError(400, `Missing required document(s): ${missing.join(', ')}`);
+        let types = documentTypes;
+        if (typeof types === 'string') {
+            try {
+                types = JSON.parse(types);
+            } catch (_) {
+                types = [];
+            }
+        }
+        if (!Array.isArray(types)) types = [];
+
+        // Keep only known types, de-duplicated, that actually arrived with a file.
+        types = [...new Set(types)].filter((type) => DOCUMENT_TYPE_LABELS[type]);
+
+        if (types.length < MIN_DOCUMENTS) {
+            throw new ApiError(400, `Attach at least ${MIN_DOCUMENTS} document before submitting`);
         }
 
         const uploaded = [];
-        for (const doc of REQUIRED_DOCUMENTS) {
-            const file = files[doc.doc_type][0];
+        for (const docType of types) {
+            const file = files[docType] && files[docType][0];
+            const label = DOCUMENT_TYPE_LABELS[docType];
 
+            if (!file) {
+                throw new ApiError(400, `${label}: file is missing`);
+            }
             if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-                throw new ApiError(400, `${doc.label}: only PDF, JPG and PNG files are accepted`);
+                throw new ApiError(400, `${label}: only PDF, JPG and PNG files are accepted`);
             }
             if (file.size > MAX_FILE_SIZE) {
-                throw new ApiError(400, `${doc.label}: file must be 10MB or smaller`);
+                throw new ApiError(400, `${label}: file must be 5MB or smaller`);
             }
 
-            const result = await storeDocument(
-                file.buffer,
-                doc.doc_type,
-                file.originalname
-            );
+            const result = await storeDocument(file.buffer, docType, file.originalname);
 
             uploaded.push({
-                doc_type: doc.doc_type,
-                label: doc.label,
+                doc_type: docType,
+                label,
                 url: result.secure_url,
                 public_id: result.public_id,
                 file_name: file.originalname,
@@ -244,6 +330,7 @@ class InvestorRegistrationService {
         }
 
         await row.update({
+            ...details,
             documents: uploaded,
             documents_submitted_at: new Date(),
             status: STATUS.DOCS_SUBMITTED
@@ -269,7 +356,9 @@ class InvestorRegistrationService {
                 { first_name: like },
                 { last_name: like },
                 { phone: like },
-                { ref_code: like }
+                { ref_code: like },
+                { legal_company_name: like },
+                { registration_number: like }
             ];
         }
         if (filters.account_type) where.account_type = filters.account_type;
@@ -304,7 +393,7 @@ class InvestorRegistrationService {
         return {
             ...plain,
             documents: Array.isArray(plain.documents) ? plain.documents : [],
-            required_documents: REQUIRED_DOCUMENTS
+            document_types: DOCUMENT_TYPES
         };
     }
 }
