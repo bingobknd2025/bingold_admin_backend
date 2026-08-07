@@ -26,6 +26,15 @@ app.use(
   })
 );
 
+// ── Public contact form ──────────────────────────────────────────────────
+// Mounted HERE, above everything else, on purpose. The form may be hosted on a
+// site that is not in ALLOWED_ORIGINS and has no api-key to present, so it must
+// sit above BOTH the CORS whitelist below and the api-key middleware further
+// down. The router brings its own CORS, body parser and rate limiter.
+// Anything added below this line is NOT public — see the api-key gate at the
+// bottom of this block.
+app.use("/api/bingold/contact", require("./routes/public/contact.public.routes"));
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || ["*"];
 app.use(
   cors({

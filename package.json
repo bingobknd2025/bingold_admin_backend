@@ -9,6 +9,7 @@
     "setup-db": "node src/scripts/initPermissions.js",
     "migrate": "node src/scripts/migrate-vendor-sso.js && node src/scripts/migrate-profile-sync.js",
     "migrate-investor-reg": "node src/scripts/migrate-investor-registrations.js",
+    "migrate-contact": "node src/scripts/migrate-contact-requests.js",
     "swagger": "node swagger.js"
   },
   "keywords": [],

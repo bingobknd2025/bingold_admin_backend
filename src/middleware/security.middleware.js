@@ -48,10 +48,25 @@ const userBasedTrackingLimiter = rateLimit({
   skipFailedRequests: true,
 });
 
+// Public contact form. That endpoint takes no api-key and no JWT, so this
+// limiter is the only thing standing between it and a scripted flood. Sized for
+// a human filling in a form, not for an integration.
+const contactFormLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 submissions per IP per hour
+  message: {
+    success: false,
+    message: "Too many contact requests from this address. Please try again later."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 module.exports = {
   otpLimiter,
   loginLimiter,
   speedLimiter,
   trackingLimiter,
-  userBasedTrackingLimiter
+  userBasedTrackingLimiter,
+  contactFormLimiter
 };

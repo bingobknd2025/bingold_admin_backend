@@ -152,6 +152,12 @@ const initPermissionSystem = async () => {
             { name: 'View Investor Registrations', slug: 'investor_registration.list', module: 'Investor Registration' },
             { name: 'View Single Investor Registration', slug: 'investor_registration.view', module: 'Investor Registration' },
 
+            // ─── Contact Requests (public contact-us tickets) ─────────────
+            { name: 'View Contact Requests', slug: 'contact_request.list', module: 'Contact Request' },
+            { name: 'View Single Contact Request', slug: 'contact_request.view', module: 'Contact Request' },
+            { name: 'Update Contact Request Status', slug: 'contact_request.update-status', module: 'Contact Request' },
+            { name: 'Delete Contact Request', slug: 'contact_request.delete', module: 'Contact Request' },
+
             // Settlements
             { name: 'View Settlements', slug: 'settlement.list', module: 'Settlement' },
             { name: 'View Single Settlement', slug: 'settlement.view', module: 'Settlement' },

@@ -14,6 +14,9 @@ router.use("/common", require("../admin/common.routes"));
 // Investor (ICO) signup capture from investor-ui — account type + company docs
 router.use("/investor-registrations", require("../admin/investor_registration.routes"));
 
+// Public contact-us submissions, worked as simple tickets
+router.use("/contact-requests", require("../admin/contact_request.routes"));
+
 // BingoPay payment ecosystem (vendors, merchant QR, payments, settlements)
 router.use("/bingopay", require("../admin/bingopay"));
 

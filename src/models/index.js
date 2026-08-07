@@ -39,6 +39,10 @@ db.BingopayPendingRegistration = require("./bingopay_pending_registration.model"
 // store the account type or the company documents, so they land here.
 db.TemporaryInvestorRegistration = require("./temporary_investor_registration.model")(sequelize, DataTypes);
 
+// Public "contact us" submissions, captured from any front-end and worked as
+// simple tickets in the admin panel.
+db.ContactRequest = require("./contact_request.model")(sequelize, DataTypes);
+
 // Define associations
 
 // 1. User Relationships
@@ -166,5 +170,8 @@ db.VendorKycDocument.belongsTo(db.PdaUser, { foreignKey: 'uploaded_by_admin', as
 // Vendor SSO QR/handoff tokens
 db.VendorProfile.hasMany(db.VendorSsoToken, { foreignKey: 'vendor_id', as: 'sso_tokens', onDelete: 'CASCADE' });
 db.VendorSsoToken.belongsTo(db.VendorProfile, { foreignKey: 'vendor_id', as: 'vendor' });
+
+// 9. Contact requests — which admin settled the ticket
+db.ContactRequest.belongsTo(db.PdaUser, { foreignKey: 'resolved_by', as: 'resolver' });
 
 module.exports = db;
