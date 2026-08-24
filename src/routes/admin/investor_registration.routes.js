@@ -6,7 +6,7 @@ const checkPermission = require("../../middleware/permission.middleware");
 router.post("/list", checkPermission('investor_registration.list'),
   /*  #swagger.tags = ['Admin - Investor Registrations']
       #swagger.summary = 'List captured investor-ui registrations'
-      #swagger.requestBody = { content: { "application/json": { schema: { type:'object', properties: { page:{type:'integer'}, limit:{type:'integer'}, search:{type:'string'}, account_type:{type:'string', enum:['individual','company']}, status:{type:'string', enum:['PENDING_OTP','PENDING_DOCUMENTS','DOCS_SUBMITTED','COMPLETED']} } } } } } */
+      #swagger.requestBody = { content: { "application/json": { schema: { type:'object', properties: { page:{type:'integer'}, limit:{type:'integer'}, search:{type:'string'}, account_type:{type:'string', enum:['individual','company']}, status:{type:'string', enum:['PENDING_OTP','PENDING_DOCUMENTS','DOCS_SUBMITTED','COMPLETED']}, marketing_opt_in:{type:'string', enum:['true','false'], description:'Filter by marketing email opt-in. Omit for all.'} } } } } } */
   controller.list);
 
 router.post("/view", checkPermission('investor_registration.view'),

@@ -65,12 +65,37 @@ module.exports = (sequelize, DataTypes) => {
         // Optional.
         company_website: { type: DataTypes.STRING(200), allowNull: true },
 
+        // ── Signup consents ──────────────────────────────────────────
+        // Collected on the investor-ui signup form, which is the only place
+        // they are given. The investor backend stores neither, so these columns
+        // are the record of what each user agreed to.
+        //
+        // Timestamps are set by the investor-ui's server-side route handler,
+        // never by the browser. The IP and the exact wording shown live in
+        // meta.consent alongside them.
+
+        // Terms & Conditions + Privacy Policy. Required to submit the form, so
+        // in practice always true — stored anyway, because "we required it" is
+        // not the same evidence as "this user ticked it at this moment".
+        terms_accepted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+        terms_accepted_at: { type: DataTypes.DATE, allowNull: true },
+
+        // Marketing email opt-in. Optional and never pre-ticked, so false here
+        // means the user left it alone — do not email them.
+        marketing_opt_in: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+        marketing_opt_in_at: { type: DataTypes.DATE, allowNull: true },
+
+        // Wording version both consents were given under, so a later change to
+        // the copy can be told apart from what earlier users agreed to.
+        consent_version: { type: DataTypes.STRING(20), allowNull: true },
+
         // [{ doc_type, label, url, public_id, file_name, mime_type, size, uploaded_at }]
         documents: { type: DataTypes.JSON, allowNull: true },
         documents_submitted_at: { type: DataTypes.DATE, allowNull: true },
         // Which surface captured the row, so other front-ends can share the table.
         source: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'investor-ui' },
-        // Diagnostics only (user agent, captured_at, signup response flags...).
+        // Diagnostics (user agent, captured_at...) plus meta.consent, which
+        // carries the consent audit trail: { ip, version, text }.
         meta: { type: DataTypes.JSON, allowNull: true }
     }, {
         tableName: 'temporary_investor_registrations',
@@ -80,7 +105,9 @@ module.exports = (sequelize, DataTypes) => {
         indexes: [
             { fields: ['email'] },
             { fields: ['account_type'] },
-            { fields: ['status'] }
+            { fields: ['status'] },
+            // Admins filter the list by opt-in to pull a mailing audience.
+            { fields: ['marketing_opt_in'] }
         ]
     });
 

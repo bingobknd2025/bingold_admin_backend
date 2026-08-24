@@ -16,8 +16,8 @@ const documentFields = InvestorRegistrationService.DOCUMENT_TYPES.map((doc) => (
 
 router.post('/capture',
     /*  #swagger.tags = ['Investor Registration']
-        #swagger.summary = 'Capture an investor-ui signup (account type + profile). No credentials.'
-        #swagger.requestBody = { required:true, content: { "application/json": { schema: { type:'object', required:['email'], properties: { email:{type:'string'}, account_type:{type:'string', enum:['individual','company']}, first_name:{type:'string'}, last_name:{type:'string'}, phone:{type:'string'}, country:{type:'string'}, ref_code:{type:'string'}, meta:{type:'object'} } } } } } */
+        #swagger.summary = 'Capture an investor-ui signup (account type, profile, consents). No credentials.'
+        #swagger.requestBody = { required:true, content: { "application/json": { schema: { type:'object', required:['email'], properties: { email:{type:'string'}, account_type:{type:'string', enum:['individual','company']}, first_name:{type:'string'}, last_name:{type:'string'}, phone:{type:'string'}, country:{type:'string'}, ref_code:{type:'string'}, terms_accepted:{type:'boolean', description:'Terms & Privacy consent. Only an explicit true is stored as consent.'}, terms_accepted_at:{type:'string', format:'date-time', description:'Set server-side by the caller; stamped here when absent.'}, marketing_opt_in:{type:'boolean', description:'Marketing email opt-in. Never pre-ticked, so false means do not email.'}, marketing_opt_in_at:{type:'string', format:'date-time'}, consent_version:{type:'string', description:'Wording version the consents were given under.'}, meta:{type:'object', description:'Diagnostics, plus meta.consent = { ip, version, text } as the consent audit trail.'} } } } } } */
     controller.capture);
 
 router.post('/verified',
