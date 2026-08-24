@@ -108,6 +108,13 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB — mirrored by DOCUMENT_MAX_SIZE 
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
+/** An ISO timestamp from the caller, or null if it is absent or unparseable. */
+const parseTimestamp = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
 /**
  * Validate and normalise the company profile. Throws on the first problem so
  * the investor UI can surface a message the user can act on.
@@ -178,6 +185,14 @@ class InvestorRegistrationService {
             ? payload.account_type
             : 'individual';
 
+        // Consents. Both arrive as booleans and only an explicit `true` counts —
+        // an absent or malformed value is not a consent. The timestamps are set
+        // by the investor-ui's server-side route handler; when one is missing we
+        // stamp it here rather than record a consent with no time against it.
+        const now = new Date();
+        const termsAccepted = payload.terms_accepted === true;
+        const marketingOptIn = payload.marketing_opt_in === true;
+
         const fields = {
             email,
             account_type: accountType,
@@ -186,6 +201,15 @@ class InvestorRegistrationService {
             phone: payload.phone || null,
             country: payload.country || null,
             ref_code: payload.ref_code || null,
+            terms_accepted: termsAccepted,
+            terms_accepted_at: termsAccepted
+                ? (parseTimestamp(payload.terms_accepted_at) || now)
+                : null,
+            marketing_opt_in: marketingOptIn,
+            marketing_opt_in_at: marketingOptIn
+                ? (parseTimestamp(payload.marketing_opt_in_at) || now)
+                : null,
+            consent_version: payload.consent_version || null,
             source: payload.source || 'investor-ui',
             meta: payload.meta || null
         };
@@ -202,6 +226,11 @@ class InvestorRegistrationService {
 
         // Keep an already-submitted document set (and its status) intact; only
         // refresh the profile fields and the chosen account type.
+        //
+        // The consents are refreshed too, deliberately: a re-signup is a fresh
+        // submission of the same form, so the latest expressed preference wins.
+        // Someone who opted into marketing and then re-signs up without ticking
+        // the box has opted out, and must be treated as opted out.
         const keepStatus = existing.status === STATUS.DOCS_SUBMITTED;
         await existing.update({
             ...fields,
@@ -380,6 +409,15 @@ class InvestorRegistrationService {
         }
         if (filters.account_type) where.account_type = filters.account_type;
         if (filters.status) where.status = filters.status;
+
+        // Marketing opt-in filter, used to pull the mailing audience. Compared
+        // against the strings the admin panel's select submits, so that "false"
+        // — which is truthy as a string — narrows to opted-out rather than
+        // being read as "opted in".
+        if (filters.marketing_opt_in !== undefined && filters.marketing_opt_in !== '') {
+            where.marketing_opt_in =
+                filters.marketing_opt_in === true || filters.marketing_opt_in === 'true';
+        }
 
         const { count, rows } = await TemporaryInvestorRegistration.findAndCountAll({
             where,

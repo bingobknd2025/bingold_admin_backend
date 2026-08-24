@@ -40,9 +40,9 @@ async function run() {
     `);
     console.log('+ temporary_investor_registrations table ensured');
 
-    // Company registration details, added after the table shipped. Each column
-    // is added only when missing, so this is safe to re-run.
-    const companyColumns = {
+    // Columns added after the table shipped. Each is added only when missing,
+    // so this is safe to re-run.
+    const addedColumns = {
         legal_company_name: 'VARCHAR(150) NULL',
         trading_name: 'VARCHAR(150) NULL',
         legal_entity_type: 'VARCHAR(100) NULL',
@@ -52,7 +52,16 @@ async function run() {
         date_of_incorporation: 'DATE NULL',
         industry: 'VARCHAR(150) NULL',
         business_description: 'TEXT NULL',
-        company_website: 'VARCHAR(200) NULL'
+        company_website: 'VARCHAR(200) NULL',
+
+        // Signup consents. Both booleans default to 0, so rows captured before
+        // the consent UI shipped read as "no consent on record" rather than as
+        // a consent nobody gave.
+        terms_accepted: 'TINYINT(1) NOT NULL DEFAULT 0',
+        terms_accepted_at: 'DATETIME NULL',
+        marketing_opt_in: 'TINYINT(1) NOT NULL DEFAULT 0',
+        marketing_opt_in_at: 'DATETIME NULL',
+        consent_version: 'VARCHAR(20) NULL'
     };
 
     const [existing] = await sequelize.query(`
@@ -62,12 +71,27 @@ async function run() {
     `);
     const present = new Set(existing.map((row) => row.COLUMN_NAME));
 
-    for (const [column, definition] of Object.entries(companyColumns)) {
+    for (const [column, definition] of Object.entries(addedColumns)) {
         if (present.has(column)) continue;
         await sequelize.query(
             `ALTER TABLE \`temporary_investor_registrations\` ADD COLUMN \`${column}\` ${definition}`
         );
         console.log(`+ added column ${column}`);
+    }
+
+    // Marketing opt-in is a list filter, so keep it off a full scan.
+    const [indexes] = await sequelize.query(`
+        SELECT INDEX_NAME FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'temporary_investor_registrations'
+    `);
+    const indexName = 'idx_temporary_investor_registrations_marketing_opt_in';
+
+    if (!indexes.some((row) => row.INDEX_NAME === indexName)) {
+        await sequelize.query(
+            `ALTER TABLE \`temporary_investor_registrations\` ADD INDEX \`${indexName}\` (\`marketing_opt_in\`)`
+        );
+        console.log(`+ added index ${indexName}`);
     }
 
     console.log('\nMigration complete.');
